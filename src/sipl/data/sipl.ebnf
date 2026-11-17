@@ -1,0 +1,69 @@
+(* ======================================================================
+   SIPL (SImple Programming Language) - formal grammar, version 1.0
+   ----------------------------------------------------------------------
+   Machine-readable ISO-EBNF. This file is the single source of truth for
+   the syntax: it is loaded by `sipl.ebnf` (generic recognizer) and the
+   test-suite checks that the hand-written parser accepts exactly the same
+   language.
+
+   Correspondence with the course BNF (Practicum, practical work 1):
+     <програма>  ::= <оператор>
+     <оператор>  ::= <змінна> := <ар.вираз> | <оператор> ; <оператор>
+                   | if <умова> then <оператор> else <оператор>
+                   | while <умова> do <оператор> | begin <оператор> end | skip
+     <ар.вираз>  ::= <число> | <змінна> | <ар.вираз> + <ар.вираз>
+                   | <ар.вираз> - <ар.вираз> | <ар.вираз> * <ар.вираз>
+                   | <ар.вираз> ÷ <ар.вираз> | ( <ар.вираз> )
+     <умова>     ::= true | false | <ар.вираз> <відношення> <ар.вираз>
+                   | <умова> ∨ <умова> | <умова> ∧ <умова> | ¬ <умова> | ( <умова> )
+
+   The course BNF is ambiguous; below it is stratified into an equivalent
+   unambiguous form that fixes precedence and associativity:
+     * `;` binds weakest and is left-associative: S1; S2; S3 = (S1; S2); S3
+     * `*` `/` bind tighter than `+` `-`; all are left-associative
+     * `not` > `and` > `or`
+   The generated language is the same as the language of the course BNF.
+
+   Terminals
+     "..."   - keyword / operator, matched by its canonical token kind
+               (see grammar/LEXICAL.md for the accepted spellings, e.g.
+               "and" also matches `&&` and `∧`, "/" also matches `÷`)
+     IDENT   - identifier  [A-Za-z_][A-Za-z0-9_]*  (not a keyword)
+     NUMBER  - natural number [0-9]+
+   ====================================================================== *)
+
+program    = stmt_seq ;
+
+stmt_seq   = statement , { ";" , statement } ;
+
+statement  = assignment
+           | if_stmt
+           | while_stmt
+           | block
+           | skip_stmt ;
+
+assignment = IDENT , ":=" , aexpr ;
+if_stmt    = "if" , bexpr , "then" , statement , "else" , statement ;
+while_stmt = "while" , bexpr , "do" , statement ;
+block      = "begin" , stmt_seq , "end" ;
+skip_stmt  = "skip" ;
+
+(* arithmetic expressions *)
+aexpr      = term , { addop , term } ;
+term       = factor , { mulop , factor } ;
+factor     = NUMBER
+           | IDENT
+           | "(" , aexpr , ")" ;
+addop      = "+" | "-" ;
+mulop      = "*" | "/" ;
+
+(* conditions *)
+bexpr      = bterm , { "or" , bterm } ;
+bterm      = bfactor , { "and" , bfactor } ;
+bfactor    = "not" , bfactor
+           | "true"
+           | "false"
+           | "(" , bexpr , ")"
+           | comparison ;
+comparison = aexpr , relop , aexpr ;
+relop      = "<" | "<=" | "=" | "<>" | ">" | ">=" ;

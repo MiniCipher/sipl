@@ -1,0 +1,5 @@
+while I < N do begin
+  J := 0;
+  while J < I do J := J + 1;
+  I := I + 1
+end

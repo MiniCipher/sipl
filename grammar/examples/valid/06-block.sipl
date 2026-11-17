@@ -1,0 +1,4 @@
+begin
+  X := 1;
+  begin Y := 2 end
+end

@@ -1,0 +1,1 @@
+if not (X = 1) and (Y < 2 or Y >= 10) then skip else skip

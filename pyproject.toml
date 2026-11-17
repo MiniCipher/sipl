@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sipl-semantics"
+version = "1.0.0"
+description = "SIPL semantic analyzer: grammar, parser, typed AST, semantic terms, step-by-step evaluation and visualization"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "SIPL course project" }]
+keywords = ["sipl", "semantics", "parser", "programming-theory", "education"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Education",
+    "Topic :: Software Development :: Compilers",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "pytest-cov>=4", "ruff>=0.4", "mypy>=1.8"]
+
+[project.scripts]
+sipl = "sipl.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+sipl = ["data/*.ebnf"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E741"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/sipl/visualization/html.py" = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src/sipl"]
+warn_unused_ignores = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+
+[tool.coverage.run]
+source = ["sipl"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
