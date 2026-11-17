@@ -1,0 +1,52 @@
+name: Release
+
+# Publishes a GitHub Release when a SemVer tag (v1.2.3) is pushed:
+#   git tag -a v1.0.0 -m "v1.0.0" && git push origin v1.0.0
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip build
+          pip install -e ".[dev]"
+      - name: Check that the tag matches the package version
+        run: python scripts/check_version.py "${GITHUB_REF_NAME}"
+      - name: Tests and conformance suite
+        run: |
+          pytest
+          python conformance/run_conformance.py --impl "sipl analyze" --json conformance-report.json
+      - name: Build sdist and wheel
+        run: python -m build
+      - name: Build demo artifacts (visualizations generated from the examples)
+        run: |
+          mkdir -p demo
+          sipl visualize examples/power.sipl --state "X=2, Y=3" -o demo/power.html
+          sipl visualize examples/gcd.sipl --state "X=12, Y=18" -o demo/gcd.html
+          sipl visualize examples/div_by_zero.sipl --state "X=1, Y=0" -o demo/div_by_zero.html
+          sipl tree examples/power.sipl --format svg --compact -o demo/power-parse-tree.svg
+          sipl parse examples/power.sipl --format svg -o demo/power-ast.svg
+          sipl term examples/power.sipl --tree svg -o demo/power-term.svg
+          cd demo && zip -r ../sipl-demo-${GITHUB_REF_NAME}.zip . && cd ..
+      - name: Release notes from CHANGELOG.md
+        run: python scripts/release_notes.py "${GITHUB_REF_NAME}" > release-notes.md
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: sipl-semantics ${{ github.ref_name }}
+          body_path: release-notes.md
+          files: |
+            dist/*
+            sipl-demo-${{ github.ref_name }}.zip
+            conformance-report.json
