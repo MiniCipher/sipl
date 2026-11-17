@@ -1,0 +1,3 @@
+WH(S²(≠, X⇒, Y⇒), IF(S²(>, X⇒, Y⇒), AS^X(S²(−, X⇒, Y⇒)), AS^Y(S²(−, Y⇒, X⇒))))
+WH(S^2(<>, X=>, Y=>), IF(S^2(>, X=>, Y=>), AS^X(S^2(-, X=>, Y=>)), AS^Y(S^2(-, Y=>, X=>))))
+\mathrm{WH}(S^{2}(\ne, X\Rightarrow, Y\Rightarrow), \mathrm{IF}(S^{2}(>, X\Rightarrow, Y\Rightarrow), \mathrm{AS}^{X}(S^{2}(-, X\Rightarrow, Y\Rightarrow)), \mathrm{AS}^{Y}(S^{2}(-, Y\Rightarrow, X\Rightarrow))))
