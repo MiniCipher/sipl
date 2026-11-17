@@ -1,0 +1,16 @@
+{
+  "description": "assign const",
+  "category": "semantics",
+  "syntax": "ok",
+  "ast": "(assign X (num 5))",
+  "term": "AS^X(#5)",
+  "runs": [
+    {
+      "state": {},
+      "result": "defined",
+      "final_state": {
+        "X": 5
+      }
+    }
+  ]
+}

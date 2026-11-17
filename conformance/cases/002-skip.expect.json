@@ -1,0 +1,18 @@
+{
+  "description": "skip",
+  "category": "semantics",
+  "syntax": "ok",
+  "ast": "(skip)",
+  "term": "id",
+  "runs": [
+    {
+      "state": {
+        "A": 1
+      },
+      "result": "defined",
+      "final_state": {
+        "A": 1
+      }
+    }
+  ]
+}

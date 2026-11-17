@@ -1,0 +1,1 @@
+if Q > 0 or true then R := 1 else R := 0

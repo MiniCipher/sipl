@@ -1,0 +1,16 @@
+{
+  "description": "overwrite",
+  "category": "semantics",
+  "syntax": "ok",
+  "runs": [
+    {
+      "state": {
+        "X": 7
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 10
+      }
+    }
+  ]
+}

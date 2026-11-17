@@ -1,0 +1,15 @@
+{
+  "description": "comments",
+  "category": "semantics",
+  "syntax": "ok",
+  "runs": [
+    {
+      "state": {},
+      "result": "defined",
+      "final_state": {
+        "X": 1,
+        "Y": 2
+      }
+    }
+  ]
+}

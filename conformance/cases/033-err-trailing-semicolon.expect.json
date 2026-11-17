@@ -1,0 +1,9 @@
+{
+  "description": "trailing semicolon",
+  "category": "syntax-error",
+  "syntax": "error",
+  "error": {
+    "line": 2,
+    "column": 9
+  }
+}

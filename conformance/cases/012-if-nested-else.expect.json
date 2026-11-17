@@ -1,0 +1,37 @@
+{
+  "description": "if nested else",
+  "category": "semantics",
+  "syntax": "ok",
+  "runs": [
+    {
+      "state": {
+        "X": -3
+      },
+      "result": "defined",
+      "final_state": {
+        "X": -3,
+        "S": -1
+      }
+    },
+    {
+      "state": {
+        "X": 0
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 0,
+        "S": 0
+      }
+    },
+    {
+      "state": {
+        "X": 9
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 9,
+        "S": 1
+      }
+    }
+  ]
+}

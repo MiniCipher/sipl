@@ -1,0 +1,3 @@
+// line comment
+X := 1 { block
+comment }; Y := 2

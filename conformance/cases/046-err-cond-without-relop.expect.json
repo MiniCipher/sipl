@@ -1,0 +1,9 @@
+{
+  "description": "cond without relop",
+  "category": "syntax-error",
+  "syntax": "error",
+  "error": {
+    "line": 1,
+    "column": 9
+  }
+}

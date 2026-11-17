@@ -1,0 +1,32 @@
+{
+  "description": "div integer",
+  "category": "semantics",
+  "syntax": "ok",
+  "ast": "(assign Q (/ (var X) (var Y)))",
+  "runs": [
+    {
+      "state": {
+        "X": 17,
+        "Y": 5
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 17,
+        "Y": 5,
+        "Q": 3
+      }
+    },
+    {
+      "state": {
+        "X": -7,
+        "Y": 2
+      },
+      "result": "defined",
+      "final_state": {
+        "X": -7,
+        "Y": 2,
+        "Q": -3
+      }
+    }
+  ]
+}

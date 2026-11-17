@@ -1,0 +1,9 @@
+{
+  "description": "if without cond",
+  "category": "syntax-error",
+  "syntax": "error",
+  "error": {
+    "line": 1,
+    "column": 4
+  }
+}

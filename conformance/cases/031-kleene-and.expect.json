@@ -1,0 +1,14 @@
+{
+  "description": "kleene and",
+  "category": "undefined",
+  "syntax": "ok",
+  "runs": [
+    {
+      "state": {},
+      "result": "defined",
+      "final_state": {
+        "R": 0
+      }
+    }
+  ]
+}

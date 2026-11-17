@@ -1,0 +1,16 @@
+{
+  "description": "nested while",
+  "category": "semantics",
+  "syntax": "ok",
+  "runs": [
+    {
+      "state": {},
+      "result": "defined",
+      "final_state": {
+        "S": 6,
+        "I": 3,
+        "J": 2
+      }
+    }
+  ]
+}

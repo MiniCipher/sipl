@@ -1,0 +1,9 @@
+{
+  "description": "missing semicolon",
+  "category": "syntax-error",
+  "syntax": "error",
+  "error": {
+    "line": 2,
+    "column": 2
+  }
+}

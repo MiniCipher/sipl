@@ -1,0 +1,14 @@
+{
+  "description": "relops all",
+  "category": "semantics",
+  "syntax": "ok",
+  "runs": [
+    {
+      "state": {},
+      "result": "defined",
+      "final_state": {
+        "R": 1
+      }
+    }
+  ]
+}
