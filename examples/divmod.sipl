@@ -1,0 +1,10 @@
+// Частка та остача відніманням: X = Q * Y + R, 0 <= R < Y
+begin
+  Q := 0;
+  R := X;
+  while R >= Y and Y > 0 do
+  begin
+    R := R - Y;
+    Q := Q + 1
+  end
+end

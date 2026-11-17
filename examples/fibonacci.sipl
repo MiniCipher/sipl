@@ -1,0 +1,11 @@
+// N-те число Фібоначчі: A = fib(N)
+begin
+  A := 0; B := 1; K := 0;
+  while K < N do
+  begin
+    T := A + B;
+    A := B;
+    B := T;
+    K := K + 1
+  end
+end

@@ -1,0 +1,4 @@
+// Знак числа з вкладеними if і логічними операціями
+if X > 0 then S := 1
+else if X = 0 or not (X > 0 or X = 0) and false then S := 0
+else S := 0 - 1

@@ -1,0 +1,6 @@
+// Цілий квадратний корінь: R = floor(sqrt(N))
+begin
+  R := 0;
+  while (R + 1) * (R + 1) <= N do
+    R := R + 1
+end
