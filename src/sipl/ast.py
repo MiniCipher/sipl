@@ -13,7 +13,7 @@ from typing import Any, ClassVar
 
 from .span import SourceSpan
 
-ARITH_OPS = ("+", "-", "*", "/")
+ARITH_OPS = ("+", "-", "*", "/", "mod")
 REL_OPS = ("<", "<=", "=", "<>", ">", ">=")
 LOGIC_OPS = ("and", "or")
 
@@ -22,6 +22,15 @@ LOGIC_OPS = ("and", "or")
 class Node:
     span: SourceSpan
     id: int = field(default=-1, compare=False)
+    #: spans of enclosing parentheses, innermost first (rules A6 / B5: (a), (b));
+    #: when non-empty, ``span`` is the outermost one and ``core_span`` excludes them
+    paren_spans: list[SourceSpan] = field(default_factory=list, compare=False)
+    core_span: SourceSpan | None = field(default=None, compare=False)
+
+    @property
+    def inner_span(self) -> SourceSpan:
+        """Span of the construct itself, without enclosing parentheses."""
+        return self.core_span or self.span
 
     kind: ClassVar[str] = "node"
     category: ClassVar[str] = "node"
@@ -45,6 +54,8 @@ class Node:
         data: dict[str, Any] = {"type": self.kind, "id": self.id}
         if with_spans:
             data["span"] = self.span.to_dict()
+            if self.paren_spans:
+                data["parens"] = len(self.paren_spans)
         data.update(self.fields())
         for name, child in self.child_fields().items():
             data[name] = child.to_dict(with_spans)

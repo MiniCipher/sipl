@@ -163,9 +163,12 @@ class Grammar:
         return g
 
     @classmethod
-    def load(cls, path: str | Path | None = None) -> Grammar:
+    def load(cls, path: str | Path | None = None, extended: bool = False) -> Grammar:
+        """Load a grammar file; by default the packaged core grammar of the course
+        (``extended=True``: the packaged ``sipl-ext.ebnf``)."""
         if path is None:
-            text = resources.files("sipl").joinpath("data/sipl.ebnf").read_text("utf-8")
+            name = "sipl-ext.ebnf" if extended else "sipl.ebnf"
+            text = resources.files("sipl").joinpath(f"data/{name}").read_text("utf-8")
         else:
             text = Path(path).read_text("utf-8")
         return cls.from_text(text)

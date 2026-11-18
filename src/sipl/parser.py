@@ -9,12 +9,13 @@ library tree).
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from . import ast as A
 from .cst import ParseNode
 from .cst import assign_ids as assign_cst_ids
 from .diagnostics import Diagnostic, SiplSyntaxError
+from .dialect import find_extensions
 from .lexer import EOF, IDENT, NUMBER, Token, tokenize
 from .span import SourceSpan
 
@@ -72,18 +73,43 @@ class Parser:
 
     # ------------------------------------------------------------ program
     def parse_program(self) -> ParseNode:
+        # P ::= begin S end   (rule P1 of the course BNF)
         if self.at(EOF):
-            raise self.fail(STATEMENT_START, "порожня програма: очікувався оператор",
-                            hint="найпростіша коректна програма: skip", code="E101")
-        seq = self.parse_stmt_seq()
+            raise self.fail(("begin",), "порожня програма: очікувалось 'begin'",
+                            hint="найпростіша коректна програма: begin skip end", code="E101")
+        if not self.at("begin"):
+            raise self.fail(("begin",), f"програма має починатися з 'begin', але знайдено "
+                            f"{self.tok.describe()}",
+                            hint="за правилом P1 курсу програма має вигляд  begin S end",
+                            code="E113")
+        begin, seq, end = self._begin_seq_end()
         if not self.at(EOF):
-            if self.at(*STATEMENT_START):
-                raise self.fail((";",), f"пропущено ';' перед {self.tok.describe()}",
-                                hint="оператори послідовності розділяються ';'", code="E102")
+            if self.at(";"):
+                raise self.fail((EOF,), "текст після 'end' програми",
+                                hint="програма - це один блок begin ... end; додаткові "
+                                "оператори розмістіть усередині нього", code="E114")
             if self.at("end"):
                 raise self.fail((EOF,), "зайве 'end' без відповідного 'begin'", code="E103")
-            raise self.fail((";", EOF))
-        return self.node("program", [seq])
+            raise self.fail((EOF,), f"текст після 'end' програми: {self.tok.describe()}",
+                            code="E114")
+        return self.node("program", [begin, seq, end])
+
+    def _begin_seq_end(self) -> tuple[ParseNode, ParseNode, ParseNode]:
+        begin = self.leaf()
+        if self.at("end"):
+            raise self.fail(STATEMENT_START, "порожній блок begin end",
+                            hint="використайте 'begin skip end'", code="E109")
+        seq = self.parse_stmt_seq()
+        if not self.at("end"):
+            if self.at(EOF):
+                raise _ParseFailure(Diagnostic(
+                    "E110", f"незакритий 'begin' (відкрито у {begin.span.start})",
+                    self.tok.span, hint="додайте відповідне 'end'", expected=("end",)))
+            if self.at(*STATEMENT_START):
+                raise self.fail((";", "end"), f"пропущено ';' перед {self.tok.describe()}",
+                                hint="оператори в блоці розділяються ';'", code="E102")
+            raise self.fail((";", "end"))
+        return begin, seq, self.leaf()
 
     def parse_stmt_seq(self) -> ParseNode:
         children = [self.parse_statement()]
@@ -155,21 +181,7 @@ class Parser:
         return self.node("while_stmt", [kw, cond, do_kw, body])
 
     def parse_block(self) -> ParseNode:
-        begin = self.leaf()
-        if self.at("end"):
-            raise self.fail(STATEMENT_START, "порожній блок begin end",
-                            hint="використайте 'begin skip end'", code="E109")
-        seq = self.parse_stmt_seq()
-        if not self.at("end"):
-            if self.at(EOF):
-                raise _ParseFailure(Diagnostic(
-                    "E110", f"незакритий 'begin' (відкрито у {begin.span.start})",
-                    self.tok.span, hint="додайте відповідне 'end'", expected=("end",)))
-            if self.at(*STATEMENT_START):
-                raise self.fail((";", "end"), f"пропущено ';' перед {self.tok.describe()}",
-                                hint="оператори в блоці розділяються ';'", code="E102")
-            raise self.fail((";", "end"))
-        return self.node("block", [begin, seq, self.leaf()])
+        return self.node("block", list(self._begin_seq_end()))
 
     # -------------------------------------------------------- arithmetic
     def parse_aexpr(self) -> ParseNode:
@@ -181,13 +193,18 @@ class Parser:
 
     def parse_term(self) -> ParseNode:
         children = [self.parse_factor()]
-        while self.at("*", "/"):
+        while self.at("*", "/", "mod"):
             children.append(self.node("mulop", [self.leaf()]))
             children.append(self.parse_factor())
         return self.node("term", children)
 
     def parse_factor(self) -> ParseNode:
-        if self.at(NUMBER, IDENT):
+        if self.at(NUMBER):
+            return self.node("factor", [self.node("number", [self.leaf()])])
+        if self.at("-") and self.peek().kind == NUMBER:
+            # n ::= ... -1 | 0 | 1 ...  - a negative number literal
+            return self.node("factor", [self.node("number", [self.leaf(), self.leaf()])])
+        if self.at(IDENT):
             return self.node("factor", [self.leaf()])
         if self.at("("):
             lp = self.leaf()
@@ -197,6 +214,8 @@ class Parser:
         hint = None
         if self.at("true", "false"):
             hint = "логічні константи не можна використовувати в арифметичному виразі"
+        elif self.at("-"):
+            hint = "унарний мінус у SIPL є лише частиною числа (-1); замість -X пишіть 0 - X"
         raise self.fail((NUMBER, IDENT, "("),
                         f"очікувався арифметичний вираз, але знайдено {self.tok.describe()}",
                         hint=hint, code="E111")
@@ -323,14 +342,24 @@ def _build_term(node: ParseNode) -> A.AExpr:
     return _fold_arith(node, _build_factor)
 
 
+def _wrap_parens(inner: A.Node, span: SourceSpan) -> None:
+    """Record a level of parentheses (rules A6 / B5) around ``inner``."""
+    if inner.core_span is None:
+        inner.core_span = inner.span
+    inner.paren_spans.append(span)
+    inner.span = span  # the node now covers the parentheses
+
+
 def _build_factor(node: ParseNode) -> A.AExpr:
     first = node.children[0]
-    if first.token is not None and first.token.kind == NUMBER:
-        return A.Num(value=int(first.token.text), span=node.span)
+    if first.label == "number":
+        text = "".join(_tok(c).text for c in first.children)
+        value = -int(_tok(first.children[-1]).text) if len(first.children) == 2 else int(text)
+        return A.Num(value=value, span=node.span)
     if first.token is not None and first.token.kind == IDENT:
         return A.Var(name=first.token.text, span=node.span)
     inner = _build_aexpr(node.children[1])
-    inner.span = node.span  # include the parentheses
+    _wrap_parens(inner, node.span)
     return inner
 
 
@@ -353,7 +382,7 @@ def _build_bfactor(node: ParseNode) -> A.BExpr:
             return A.BoolLit(value=kind == "true", span=node.span)
         if kind == "(":
             inner = _build_bexpr(c[1])
-            inner.span = node.span
+            _wrap_parens(inner, node.span)
             return inner
     comp = first
     return A.Compare(op=_op_text(comp.children[1]), left=_build_aexpr(comp.children[0]),
@@ -361,7 +390,7 @@ def _build_bfactor(node: ParseNode) -> A.BExpr:
 
 
 def build_ast(tree: ParseNode) -> A.Program:
-    program = A.Program(body=_build_stmt_seq(tree.children[0]), span=tree.span)
+    program = A.Program(body=_build_stmt_seq(tree.children[1]), span=tree.span)
     A.assign_ids(program)
     return program
 
@@ -376,6 +405,8 @@ class ParseResult:
     tree: ParseNode
     ast: A.Program
     tokens: list[Token]
+    #: W201 warnings: constructs outside the course BNF (extensions)
+    warnings: list[Diagnostic] = field(default_factory=list)
 
 
 def parse_tree(source: str) -> tuple[ParseNode, list[Token]]:
@@ -390,11 +421,18 @@ def parse_tree(source: str) -> tuple[ParseNode, list[Token]]:
     return tree, tokens
 
 
-def parse(source: str) -> ParseResult:
-    """Parse SIPL source into parse tree + typed AST. Raises :class:`SiplSyntaxError`."""
+def parse(source: str, strict: bool = False) -> ParseResult:
+    """Parse SIPL source into parse tree + typed AST. Raises :class:`SiplSyntaxError`.
+
+    With ``strict=True`` only the core language of the course is accepted
+    (``grammar/sipl.ebnf``); otherwise extensions are accepted with warnings.
+    """
     tree, tokens = parse_tree(source)
-    return ParseResult(source, tree, build_ast(tree), tokens)
+    ext = find_extensions(tokens, strict)
+    if strict and ext:
+        raise SiplSyntaxError(ext[0])
+    return ParseResult(source, tree, build_ast(tree), tokens, ext)
 
 
-def parse_program(source: str) -> A.Program:
-    return parse(source).ast
+def parse_program(source: str, strict: bool = False) -> A.Program:
+    return parse(source, strict).ast

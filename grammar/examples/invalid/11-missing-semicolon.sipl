@@ -1,1 +1,1 @@
-X := 1 Y := 2
+begin X := 1 Y := 2 end

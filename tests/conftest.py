@@ -22,3 +22,8 @@ end"""
 @pytest.fixture
 def power_source() -> str:
     return POWER
+
+
+def prog(body: str) -> str:
+    """Wrap statements into a program  begin S end  (rule P1)."""
+    return f"begin {body} end"

@@ -1,1 +1,1 @@
-X := 42
+begin X := 42 end

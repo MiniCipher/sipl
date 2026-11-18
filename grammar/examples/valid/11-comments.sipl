@@ -1,2 +1,2 @@
 // comment
-X := 1 { inline comment }
+begin X := 1 { inline comment } end

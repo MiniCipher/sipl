@@ -1,46 +1,47 @@
 (* ======================================================================
-   SIPL (SImple Programming Language) - formal grammar, version 1.0
+   SIPL - формальна граматика ЯДРА МОВИ КУРСУ, версія 2.0 (ISO-EBNF)
    ----------------------------------------------------------------------
-   Machine-readable ISO-EBNF. This file is the single source of truth for
-   the syntax: it is loaded by `sipl.ebnf` (generic recognizer) and the
-   test-suite checks that the hand-written parser accepts exactly the same
-   language.
+   Джерело: М.С. Нікітченко, «Теорія програмування», 2020, табл. 1.4 (с. 10);
+   Практикум, практична робота 1.
 
-   Correspondence with the course BNF (Practicum, practical work 1):
-     <програма>  ::= <оператор>
-     <оператор>  ::= <змінна> := <ар.вираз> | <оператор> ; <оператор>
-                   | if <умова> then <оператор> else <оператор>
-                   | while <умова> do <оператор> | begin <оператор> end | skip
-     <ар.вираз>  ::= <число> | <змінна> | <ар.вираз> + <ар.вираз>
-                   | <ар.вираз> - <ар.вираз> | <ар.вираз> * <ар.вираз>
-                   | <ар.вираз> ÷ <ар.вираз> | ( <ар.вираз> )
-     <умова>     ::= true | false | <ар.вираз> <відношення> <ар.вираз>
-                   | <умова> ∨ <умова> | <умова> ∧ <умова> | ¬ <умова> | ( <умова> )
+     P ::= begin S end                                                   P1
+     S ::= x := a | S1 ; S2 | if b then S1 else S2 | while b do S
+         | begin S end | skip                                            S1-S6
+     a ::= n | x | a1 + a2 | a1 - a2 | a1 * a2 | (a)                     A1-A6
+     b ::= a1 = a2 | a1 > a2 | b1 ∨ b2 | ¬b | (b)                        B1-B5
+     x ::= ... M | N | ...                                               NV
+     n ::= ... -1 | 0 | 1 | 2 | 3 | ...                                  NN
 
-   The course BNF is ambiguous; below it is stratified into an equivalent
-   unambiguous form that fixes precedence and associativity:
-     * `;` binds weakest and is left-associative: S1; S2; S3 = (S1; S2); S3
-     * `*` `/` bind tighter than `+` `-`; all are left-associative
-     * `not` > `and` > `or`
-   The generated language is the same as the language of the course BNF.
+   БНФ курсу неоднозначна. Підручник (с. 9-10) усуває неоднозначність
+   пріоритетами (у порядку зменшення): *; + -; = >; ¬; ∨; :=; while; if; ;
+   і лівою асоціативністю всіх бінарних операцій. Нижче - еквівалентна
+   однозначна (стратифікована) форма: це «друга можливість досягти
+   однозначності - ввести нові метасимволи», запропонована на с. 10.
+   Вона породжує ту саму мову, що й БНФ курсу.
 
-   Terminals
-     "..."   - keyword / operator, matched by its canonical token kind
-               (see grammar/LEXICAL.md for the accepted spellings, e.g.
-               "and" also matches `&&` and `∧`, "/" also matches `÷`)
-     IDENT   - identifier  [A-Za-z_][A-Za-z0-9_]*  (not a keyword)
-     NUMBER  - natural number [0-9]+
+   Наслідки пріоритетів, закладені в правила:
+     * гілки if і тіло while - один оператор (while/if сильніші за ;),
+       тому  if b then S1 else S2; S3  =  (if b then S1 else S2); S3
+     * S1; S2; S3 = (S1; S2); S3,   a1 - a2 - a3 = (a1 - a2) - a3
+     * ¬ a1 = a2  =  ¬(a1 = a2)  (порівняння сильніше за ¬)
+
+   Термінали: "..." - канонічний вид токена (див. LEXICAL.md: "-" також
+   приймає "–" і "−", "*" - "∗", "or" - "∨", "not" - "¬");
+   IDENT - змінна, NUMBER - послідовність цифр.
+
+   Розширення, якими користується практикум (≥, <, div, mod, ...), задані
+   окремо у sipl-ext.ebnf.
    ====================================================================== *)
 
-program    = stmt_seq ;
+program    = "begin" , stmt_seq , "end" ;                      (* P1 *)
 
-stmt_seq   = statement , { ";" , statement } ;
+stmt_seq   = statement , { ";" , statement } ;                 (* S2 *)
 
-statement  = assignment
-           | if_stmt
-           | while_stmt
-           | block
-           | skip_stmt ;
+statement  = assignment                                        (* S1 *)
+           | if_stmt                                           (* S3 *)
+           | while_stmt                                        (* S4 *)
+           | block                                             (* S5 *)
+           | skip_stmt ;                                       (* S6 *)
 
 assignment = IDENT , ":=" , aexpr ;
 if_stmt    = "if" , bexpr , "then" , statement , "else" , statement ;
@@ -48,22 +49,22 @@ while_stmt = "while" , bexpr , "do" , statement ;
 block      = "begin" , stmt_seq , "end" ;
 skip_stmt  = "skip" ;
 
-(* arithmetic expressions *)
-aexpr      = term , { addop , term } ;
-term       = factor , { mulop , factor } ;
-factor     = NUMBER
-           | IDENT
-           | "(" , aexpr , ")" ;
+(* арифметичні вирази *)
+aexpr      = term , { addop , term } ;                         (* A3, A4 *)
+term       = factor , { mulop , factor } ;                     (* A5 *)
+factor     = number                                            (* A1 *)
+           | IDENT                                             (* A2 *)
+           | "(" , aexpr , ")" ;                               (* A6 *)
+number     = [ "-" ] , NUMBER ;                                (* NN: ... -1 | 0 | 1 ... *)
 addop      = "+" | "-" ;
-mulop      = "*" | "/" ;
+mulop      = "*" ;
 
-(* conditions *)
-bexpr      = bterm , { "or" , bterm } ;
-bterm      = bfactor , { "and" , bfactor } ;
-bfactor    = "not" , bfactor
-           | "true"
-           | "false"
-           | "(" , bexpr , ")"
+(* умови *)
+bexpr      = bterm , { "or" , bterm } ;                        (* B3 *)
+bterm      = bfactor ;            (* кон'юнкції в ядрі немає; правило збігається
+                                     за структурою з sipl-ext.ebnf *)
+bfactor    = "not" , bfactor                                   (* B4 *)
+           | "(" , bexpr , ")"                                 (* B5 *)
            | comparison ;
-comparison = aexpr , relop , aexpr ;
-relop      = "<" | "<=" | "=" | "<>" | ">" | ">=" ;
+comparison = aexpr , relop , aexpr ;                           (* B1, B2 *)
+relop      = "=" | ">" ;

@@ -1,4 +1,8 @@
-"""Lexical analysis of SIPL (see grammar/LEXICAL.md)."""
+"""Lexical analysis of SIPL (see grammar/LEXICAL.md).
+
+Alternative spellings are different characters for the same terminal (the
+textbook itself writes both ``M–N`` with an en dash and ``R ∗ X``).
+"""
 
 from __future__ import annotations
 
@@ -9,7 +13,7 @@ from .span import LineIndex, SourceSpan
 
 KEYWORDS = frozenset(
     {"begin", "end", "if", "then", "else", "while", "do", "skip", "true", "false",
-     "and", "or", "not", "div"}
+     "and", "or", "not", "div", "mod"}
 )
 
 #: alternative spellings -> canonical token kind
@@ -19,8 +23,8 @@ WORD_ALIASES = {"div": "/"}
 OPERATORS: list[tuple[str, str]] = [
     (":=", ":="), ("<=", "<="), (">=", ">="), ("<>", "<>"), ("!=", "<>"),
     ("&&", "and"), ("||", "or"),
-    (";", ";"), ("(", "("), (")", ")"), ("+", "+"), ("-", "-"), ("−", "-"),
-    ("*", "*"), ("×", "*"), ("/", "/"), ("÷", "/"), ("<", "<"), (">", ">"),
+    (";", ";"), ("(", "("), (")", ")"), ("+", "+"), ("-", "-"), ("−", "-"), ("–", "-"),
+    ("*", "*"), ("∗", "*"), ("×", "*"), ("%", "mod"), ("/", "/"), ("÷", "/"), ("<", "<"), (">", ">"),
     ("=", "="), ("≤", "<="), ("≥", ">="), ("≠", "<>"), ("∧", "and"), ("&", "and"),
     ("∨", "or"), ("¬", "not"), ("!", "not"),
 ]

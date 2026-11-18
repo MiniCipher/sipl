@@ -1,0 +1,50 @@
+(* ======================================================================
+   SIPL - РОЗШИРЕНА граматика, версія 2.0 (ISO-EBNF)
+   ----------------------------------------------------------------------
+   Ядро курсу (sipl.ebnf) плюс операції, якими користуються задачі
+   практикуму та МКР (напр. «X ≥ Y» -> S²(gre, ...), «div», «mod»):
+
+     a ::= ... | a1 div a2 | a1 mod a2          функції div, mod
+     b ::= ... | a1 < a2 | a1 ≤ a2 | a1 ≠ a2 | a1 ≥ a2
+             | b1 ∧ b2 | true | false             less, leq, neq, gre, and
+
+   Пріоритети: div, mod - як *; < ≤ ≠ ≥ - як = >; ∧ - між ¬ та ∨.
+   Будь-яка програма ядра є програмою розширеної мови з тим самим AST і
+   термом. Використання розширень `sipl` повідомляє попередженням W201,
+   а з прапорцем --strict - помилкою E201.
+   ====================================================================== *)
+
+program    = "begin" , stmt_seq , "end" ;
+
+stmt_seq   = statement , { ";" , statement } ;
+
+statement  = assignment
+           | if_stmt
+           | while_stmt
+           | block
+           | skip_stmt ;
+
+assignment = IDENT , ":=" , aexpr ;
+if_stmt    = "if" , bexpr , "then" , statement , "else" , statement ;
+while_stmt = "while" , bexpr , "do" , statement ;
+block      = "begin" , stmt_seq , "end" ;
+skip_stmt  = "skip" ;
+
+aexpr      = term , { addop , term } ;
+term       = factor , { mulop , factor } ;
+factor     = number
+           | IDENT
+           | "(" , aexpr , ")" ;
+number     = [ "-" ] , NUMBER ;
+addop      = "+" | "-" ;
+mulop      = "*" | "/" | "mod" ;
+
+bexpr      = bterm , { "or" , bterm } ;
+bterm      = bfactor , { "and" , bfactor } ;
+bfactor    = "not" , bfactor
+           | "true"
+           | "false"
+           | "(" , bexpr , ")"
+           | comparison ;
+comparison = aexpr , relop , aexpr ;
+relop      = "=" | ">" | "<" | "<=" | "<>" | ">=" ;

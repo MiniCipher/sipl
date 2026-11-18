@@ -1,0 +1,1 @@
+begin if X > 0 and Y > 0 then skip else skip end
