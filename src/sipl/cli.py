@@ -21,12 +21,13 @@ from .api import analyze_source, report
 from .diagnostics import Diagnostic, SiplSyntaxError
 from .ebnf import Grammar
 from .parser import ParseResult, parse
-from .semantics.builder import build_term_with_steps
+from .semantics.builder import EXTENSION_RULES, build_term_with_steps
 from .semantics.evaluator import DEFAULT_MAX_STEPS, PROGRAM_RULES, EvalResult, evaluate
 from .semantics.render import render_pretty, render_text
 from .semantics.state import State, StateFormatError, format_state, parse_state
 from .visualization import (
     build_payload,
+    derivation_tree,
     from_ast,
     from_parse_tree,
     from_term,
@@ -35,6 +36,7 @@ from .visualization import (
     to_json,
     to_svg,
     to_text,
+    traversal_report,
 )
 
 EXIT_OK, EXIT_SYNTAX, EXIT_USAGE, EXIT_UNDEFINED = 0, 1, 2, 3
@@ -91,7 +93,7 @@ def _print_diag(diag: Diagnostic, source: str, filename: str, as_json: bool) -> 
 def _parse_or_report(args: argparse.Namespace) -> tuple[ParseResult, str] | None:
     source, filename = _read_source(args)
     try:
-        return parse(source), filename
+        return parse(source, strict=getattr(args, "strict", False)), filename
     except SiplSyntaxError as exc:
         _print_diag(exc.diagnostic, source, filename, getattr(args, "json", False))
         return None
@@ -109,12 +111,19 @@ def cmd_check(args: argparse.Namespace) -> int:
         return EXIT_SYNTAX
     parsed, filename = res
     stmts = sum(1 for n in parsed.ast.walk() if n.kind in ("Assign", "If", "While", "Skip"))
+    core = not parsed.warnings
     if args.json:
-        print(_dump({"ok": True, "file": filename, "diagnostics": [],
+        print(_dump({"ok": True, "file": filename, "core_language": core,
+                     "diagnostics": [d.to_dict() for d in parsed.warnings],
                      "statements": stmts, "variables": parsed.ast.variables()}))
     else:
+        for w in parsed.warnings:
+            print(w.render(parsed.source, filename), file=sys.stderr)
+        lang = ("мова ядра курсу" if core
+                else f"використано розширення: {len(parsed.warnings)} (див. вище; --strict - "
+                     "лише ядро курсу)")
         print(f"{filename}: OK - синтаксично коректна програма "
-              f"({stmts} операторів, змінні: {', '.join(parsed.ast.variables()) or '-'})")
+              f"({stmts} операторів, змінні: {', '.join(parsed.ast.variables()) or '-'}; {lang})")
     return EXIT_OK
 
 
@@ -147,9 +156,14 @@ def cmd_tree(args: argparse.Namespace) -> int:
         term, steps = build_term_with_steps(parsed.ast, parsed.source)
         _emit(render_html(build_payload(parsed, term, steps, None, None, filename)), args, "HTML")
         return EXIT_OK
-    v = from_parse_tree(parsed.tree, compact=args.compact)
-    title = f"Parse tree: {filename}"
-    text = {"text": lambda: to_text(v, parsed.source),
+    if args.style == "course":
+        v = derivation_tree(parsed)
+        title = f"Дерево синтаксичного виводу (БНФ курсу): {filename}"
+    else:
+        v = from_parse_tree(parsed.tree, compact=args.compact)
+        title = f"Parse tree (grammar/sipl-ext.ebnf): {filename}"
+    text = {"text": lambda: to_text(v, parsed.source) + (
+                "\n\n" + traversal_report(v, parsed) if args.style == "course" else ""),
             "json": lambda: to_json(v, parsed.source),
             "dot": lambda: to_dot(v, parsed.source, title),
             "svg": lambda: to_svg(v, parsed.source, title)}[args.format]()
@@ -180,9 +194,10 @@ def cmd_term(args: argparse.Namespace) -> int:
         return EXIT_OK
     lines = []
     if args.steps:
-        lines.append("Рекурсивна побудова семантичного терму (знизу вгору):")
-        for i, s in enumerate(steps, 1):
-            lines.append(f"{i:>3}. [{s.rule}] ⟦{s.source}⟧ = {render_text(s.term, args.style)}")
+        lines.append("Побудова семантичного терму за правилами табл. 1.6 (зверху вниз):")
+        for i, st in enumerate(steps, 1):
+            mark = "  (розширення)" if st.rule in EXTENSION_RULES else ""
+            lines.append(f"{i:>3}. {st.rule}{mark}: {st.lhs} = {st.rhs}")
         lines.append("")
         lines.append("Семантичний терм програми:")
     if args.pretty:
@@ -200,7 +215,7 @@ def _format_eval(result: EvalResult, args: argparse.Namespace) -> str:
         out.append("")
         out.append("Покрокове обчислення (трейс застосованих правил):")
         for e in result.trace:
-            if not args.all_rules and e.rule not in PROGRAM_RULES and e.rule != "WH":
+            if not args.all_rules and e.rule not in PROGRAM_RULES:
                 continue
             mark = " ⊥" if e.undefined else ""
             out.append(f"{e.index + 1:>5}. {'  ' * e.depth}[{e.rule}]{mark} {e.explanation}")
@@ -220,7 +235,7 @@ def _format_eval(result: EvalResult, args: argparse.Namespace) -> str:
         out.append(f"Результат: {format_state(result.final, style)}   "
                    f"[{result.steps} застосувань правил]")
     else:
-        out.append(f"Результат: ⊥ (невизначено) - {result.reason}   [код {result.reason_code}]")
+        out.append(f"Результат: невизначений (⊥) - {result.reason}   [код {result.reason_code}]")
     return "\n".join(out)
 
 
@@ -266,7 +281,7 @@ def cmd_visualize(args: argparse.Namespace) -> int:
 def cmd_analyze(args: argparse.Namespace) -> int:
     state = _state(args)
     source, _ = _read_source(args)
-    analysis = analyze_source(source, state, max_steps=args.max_steps)
+    analysis = analyze_source(source, state, max_steps=args.max_steps, strict=args.strict)
     print(_dump(report(analysis, with_trace=args.trace)))
     if not analysis.ok:
         return EXIT_SYNTAX
@@ -276,15 +291,18 @@ def cmd_analyze(args: argparse.Namespace) -> int:
 
 
 def cmd_grammar(args: argparse.Namespace) -> int:
-    grammar = Grammar.load()
+    name = "sipl-ext.ebnf" if args.ext else "sipl.ebnf"
     if args.file is None and args.code is None:
         from importlib import resources
 
-        print(resources.files("sipl").joinpath("data/sipl.ebnf").read_text("utf-8"))
+        print(resources.files("sipl").joinpath(f"data/{name}").read_text("utf-8"))
         return EXIT_OK
+    grammar = Grammar.load(extended=args.ext)
     source, filename = _read_source(args)
     ok = grammar.accepts(source)
-    print(f"{filename}: {'належить' if ok else 'НЕ належить'} мові, заданій grammar/sipl.ebnf")
+    lang = "розширеній мові (grammar/sipl-ext.ebnf)" if args.ext else \
+        "мові ядра курсу (grammar/sipl.ebnf)"
+    print(f"{filename}: {'належить' if ok else 'НЕ належить'} {lang}")
     return EXIT_OK if ok else EXIT_SYNTAX
 
 
@@ -293,6 +311,8 @@ def cmd_grammar(args: argparse.Namespace) -> int:
 def _add_input(p: argparse.ArgumentParser) -> None:
     p.add_argument("file", nargs="?", help="файл .sipl ('-' - стандартний ввід)")
     p.add_argument("-c", "--code", help="текст програми замість файлу")
+    p.add_argument("--strict", action="store_true",
+                   help="лише мова ядра курсу (БНФ підручника); розширення - помилка E201")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -322,8 +342,11 @@ def build_parser() -> argparse.ArgumentParser:
     _add_input(p)
     p.add_argument("-f", "--format", choices=["text", "json", "dot", "svg", "html"],
                    default="text")
+    p.add_argument("--style", choices=["course", "ebnf"], default="course",
+                   help="course - за БНФ курсу (<оператор>, <вираз>, ..., як у ПР 1); "
+                        "ebnf - за операційною граматикою sipl-ext.ebnf")
     p.add_argument("--compact", action="store_true",
-                   help="згорнути ланцюжки одиничних правил (aexpr›term›factor)")
+                   help="(--style ebnf) згорнути ланцюжки одиничних правил")
     p.add_argument("-o", "--output", help="файл для результату")
     p.set_defaults(func=cmd_tree)
 
@@ -343,7 +366,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--state", "-s", help="початковий стан: \"X=2, Y=3\" або JSON")
     p.add_argument("--explain", "-e", action="store_true", help="трейс застосованих правил")
     p.add_argument("--all-rules", "-a", action="store_true",
-                   help="разом з правилами для виразів (DEN, CONST, ARITH, REL, ...)")
+                   help="разом з формулами для виразів (AF_S, AF_DNM, AF_CONST)")
     p.add_argument("--show-term", "-t", action="store_true", help="надрукувати терм")
     p.add_argument("--max-steps", type=int, default=DEFAULT_MAX_STEPS,
                    help=f"ліміт застосувань правил (за замовчуванням {DEFAULT_MAX_STEPS})")
@@ -370,6 +393,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("grammar", help="показати граматику EBNF або перевірити файл за нею")
     p.add_argument("file", nargs="?", help="перевірити належність програми мові граматики")
     p.add_argument("-c", "--code")
+    p.add_argument("--ext", action="store_true", help="розширена граматика sipl-ext.ebnf")
     p.set_defaults(func=cmd_grammar)
     return ap
 

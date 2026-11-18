@@ -19,6 +19,7 @@ from ..semantics.evaluator import RULE_DESCRIPTIONS, EvalResult
 from ..semantics.render import Piece, render
 from ..semantics.state import State
 from ..semantics.terms import Term
+from .derivation import derivation_tree
 from .model import VNode, from_ast, from_parse_tree
 
 
@@ -50,6 +51,8 @@ def build_payload(parsed: ParseResult, term: Term, steps: list[BuildStep],
         "filename": filename,
         "source": parsed.source,
         "cst": _vnode_js(from_parse_tree(parsed.tree)),
+        "deriv": _vnode_js(derivation_tree(parsed)),
+        "warnings": [w.to_dict() for w in parsed.warnings],
         "ast": _vnode_js(from_ast(parsed.ast)),
         "term": _piece_js(render(term, "unicode")),
         "termAscii": render(term, "ascii").text(),
@@ -87,6 +90,10 @@ header .file{font-family:var(--mono);color:#a8b6c8}
 header .hint{margin-left:auto;color:#a8b6c8;font-size:12px}
 .badge{padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600}
 .badge.ok{background:#d6f5e3;color:var(--ok)}.badge.bad{background:#fde0e0;color:var(--bad)}.badge.none{background:#e6e9ee;color:#445}
+.sw{margin-left:auto;display:inline-flex;gap:2px;text-transform:none}
+.sw button{border:1px solid var(--line);background:#fff;border-radius:5px;font-size:11px;padding:1px 7px;cursor:pointer;color:var(--muted)}
+.sw button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.warn{color:#8a5a00;font-size:12px;margin-top:6px}
 .flow{display:flex;gap:6px;align-items:center;padding:8px 18px;color:var(--muted);font-size:12px;flex-wrap:wrap}
 .flow b{color:var(--ink)}
 main{display:grid;grid-template-columns:minmax(260px,1fr) minmax(260px,1fr) minmax(260px,1fr);grid-auto-rows:minmax(0,auto);gap:12px;padding:0 18px 18px}
@@ -142,7 +149,7 @@ th{color:var(--muted);font-weight:600;font-size:12px}
 .te.cur-step{background:var(--sel)}
 .te.rel{background:var(--rel)}
 .te.undef{color:var(--bad)}
-.te .r{display:inline-block;min-width:58px;color:var(--accent);font-weight:600}
+.te .r{display:inline-block;min-width:64px;color:var(--accent);font-weight:600}
 .te.lv-expr .r{color:#8a5a00}
 .chg{background:#d6f5e3;font-weight:700}
 .trans .t{cursor:pointer;padding:2px 6px;border-radius:5px;font-family:var(--mono);font-size:12.5px}
@@ -156,15 +163,17 @@ th{color:var(--muted);font-weight:600;font-size:12px}
 <header><h1>SIPL · Source → Parse Tree → AST → Semantic Term → State</h1>
 <span class="file" id="fname"></span><span id="status"></span>
 <span class="hint">Клікніть будь-який елемент - відповідні елементи на інших рівнях підсвітяться</span></header>
-<div class="flow"><b>1</b> вихідний код → <b>2</b> дерево виводу (за grammar/sipl.ebnf) → <b>3</b> типізоване AST →
+<div class="flow"><b>1</b> вихідний код → <b>2</b> дерево синтаксичного виводу (БНФ курсу) → <b>3</b> типізоване AST →
 <b>4</b> семантичний терм → <b>5</b> переходи станів</div>
 <main>
 <section id="p-src"><h2><span class="n">1</span>Вихідний код</h2><div class="body"><pre class="src" id="src"></pre></div></section>
-<section id="p-cst"><h2><span class="n">2</span>Дерево синтаксичного виводу</h2><div class="body"><ul class="tree" id="cst"></ul></div></section>
+<section id="p-cst"><h2><span class="n">2</span>Дерево синтаксичного виводу
+<span class="sw"><button id="sw-course" class="on" title="метазмінні та правила БНФ курсу (ПР 1)">БНФ курсу</button><button id="sw-ebnf" title="правила grammar/sipl-ext.ebnf">EBNF</button></span></h2>
+<div class="body"><ul class="tree" id="deriv"></ul><ul class="tree" id="cst" style="display:none"></ul></div></section>
 <section id="p-ast"><h2><span class="n">3</span>AST</h2><div class="body"><ul class="tree" id="ast"></ul></div></section>
 <section id="p-term"><h2><span class="n">4</span>Семантичний терм</h2><div class="body">
 <div class="formula" id="term"></div><div class="ascii" id="term-ascii"></div>
-<details><summary>Рекурсивна побудова терму з AST (правила ⟦·⟧)</summary><table class="steps" id="steps"></table></details>
+<details><summary>Побудова терму: sem_P, sem_S, sem_A, sem_B за правилами табл. 1.6</summary><table class="steps" id="steps"></table></details>
 </div></section>
 <section id="p-exec"><h2><span class="n">5</span>Обчислення терму на стані та переходи станів</h2><div class="body" id="exec"></div></section>
 </main>
@@ -188,6 +197,7 @@ else { st.className = 'badge bad'; st.textContent = 'результат неви
 const astNodes = [], cstNodes = [];
 (function idx(n, list){ list.push(n); (n.c||[]).forEach(c => idx(c, list)); })(D.ast, astNodes);
 (function idx(n, list){ list.push(n); (n.c||[]).forEach(c => idx(c, list)); })(D.cst, cstNodes);
+(function idx(n, list){ list.push(n); (n.c||[]).forEach(c => idx(c, list)); })(D.deriv, cstNodes);
 const astById = {}; astNodes.forEach(n => astById[n.ast] = n);
 function innermost(list, s, e) {
   let best = null;
@@ -223,6 +233,10 @@ function renderTree(root, ul, kindName) {
   })(root, ul, 0);
 }
 renderTree(D.cst, $('#cst'), 'cst');
+renderTree(D.deriv, $('#deriv'), 'cst');
+$('#sw-course').onclick = () => { $('#deriv').style.display = ''; $('#cst').style.display = 'none'; $('#sw-course').classList.add('on'); $('#sw-ebnf').classList.remove('on'); };
+$('#sw-ebnf').onclick = () => { $('#deriv').style.display = 'none'; $('#cst').style.display = ''; $('#sw-ebnf').classList.add('on'); $('#sw-course').classList.remove('on'); };
+if (D.warnings.length) { const w = el('div', 'warn', '⚠ використано розширення поза БНФ курсу: ' + D.warnings.map(x => x.line + ':' + x.column + ' ' + x.message.split(' (')[0]).join('; ')); $('#src').parentElement.appendChild(w); }
 renderTree(D.ast, $('#ast'), 'ast');
 
 /* ---------- 4. term ---------- */
@@ -237,9 +251,10 @@ renderTree(D.ast, $('#ast'), 'ast');
     if (t) { ev.stopPropagation(); select({term: +t.dataset.term}); } });
   $('#term-ascii').textContent = 'ASCII: ' + D.termAscii;
   const tb = $('#steps');
-  tb.innerHTML = '<tr><th>правило</th><th>фрагмент</th><th>терм</th></tr>';
+  tb.innerHTML = '<tr><th>правило</th><th>застосування правила</th><th>отриманий терм</th></tr>';
   D.steps.forEach(s => { const tr = el('tr'); tr.style.cursor = 'pointer';
-    tr.appendChild(el('td', 'mono', s.rule)); tr.appendChild(el('td', 'mono', '⟦' + s.source + '⟧'));
+    tr.appendChild(el('td', 'mono', s.rule + (s.extension ? ' *' : '')));
+    const ap = el('td', 'mono'); ap.appendChild(ovlFrag(s.lhs + ' = ' + s.rhs)); tr.appendChild(ap);
     const tt = el('td', 'mono'); tt.appendChild(ovlFrag(s.term)); tr.appendChild(tt); tr.title = s.rule_text; tr.onclick = () => select({ast: s.ast_id});
     tb.appendChild(tr); });
 })();
@@ -282,7 +297,7 @@ function drawTrace(){
   $('#rng').max = Math.max(0, vis.length - 1);
   vis.forEach((e, i) => { const d = el('div', 'te lv-' + e.level + (e.undefined ? ' undef' : ''));
     d.style.paddingLeft = (8 + e.depth * 14) + 'px'; d.dataset.i = i; d.dataset.term = e.term_id;
-    d.appendChild(el('span', 'r', '[' + e.rule + ']')); d.appendChild(ovlFrag(' ' + e.explanation));
+    d.appendChild(el('span', 'r', e.rule)); d.appendChild(ovlFrag(' ' + e.explanation));
     d.onclick = () => setCur(i); box.appendChild(d); });
 }
 function gotoTrace(index){ const vis = visible(); let i = vis.findIndex(e => e.index >= index); if (i < 0) i = vis.length - 1; setCur(i); }
@@ -293,7 +308,7 @@ function setCur(i){
   $$('.te.cur-step').forEach(x => x.classList.remove('cur-step'));
   const row = $(`.te[data-i="${cur}"]`); if (row) { row.classList.add('cur-step'); row.scrollIntoView({block: 'nearest'}); }
   $('#cur').innerHTML = '';
-  const c = $('#cur'); const h = el('div'); h.appendChild(el('span', 'rule', '[' + e.rule + '] '));
+  const c = $('#cur'); const h = el('div'); h.appendChild(el('span', 'rule', e.rule + (e.note ? ' (' + e.note + ')' : '') + ': '));
   const rd = el('span', 'rd'); rd.appendChild(ovlFrag(D.rules[e.rule] || '')); h.appendChild(rd); c.appendChild(h);
   const ex = el('div', 'ex'); ex.appendChild(ovlFrag(e.explanation)); c.appendChild(ex);
   drawState(e);

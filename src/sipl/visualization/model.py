@@ -84,7 +84,7 @@ def from_term(term: Term, ast_spans: dict[int, SourceSpan] | None = None) -> VNo
     elif isinstance(term, WhileT):
         label = "WH"
     elif isinstance(term, SuperT):
-        label = f"S{'¹' if len(term.args) == 1 else '²'}({op_symbol(term.op)})"
+        label = f"S{'¹' if len(term.args) == 1 else '²'}({op_symbol(term.op)}, …)"
     elif isinstance(term, (ConstT, DenameT)):
         label = render_text(term)
     else:

@@ -13,14 +13,17 @@ from sipl.parser import parse
 from sipl.semantics import build_term_with_steps, evaluate
 from sipl.visualization import (
     build_payload,
+    derivation_tree,
     from_ast,
     from_parse_tree,
     from_term,
+    leaf_traversal,
     render_html,
     to_dot,
     to_json,
     to_svg,
     to_text,
+    traversal_report,
 )
 
 
@@ -37,6 +40,34 @@ def test_text_tree_links_nodes_to_source(parsed) -> None:  # type: ignore[no-unt
     assert any("assignment" in ln and "«R := 1»" in ln for ln in lines)
     assert any("IDENT X" in ln and "5:12-5:13" in ln for ln in lines)
     assert "└── " in text and "├── " in text
+
+
+def test_course_derivation_tree_as_in_practical_work_1(parsed) -> None:  # type: ignore[no-untyped-def]
+    tree = derivation_tree(parsed)
+    assert tree.label == "<програма> P1"
+    labels = [n.label.split(" ")[0] for n in tree.walk() if n.kind != "token"]
+    assert set(labels) == {"<програма>", "<оператор>", "<вираз>", "<умова>", "<змінна>",
+                           "<число>"}
+    rules = {n.label.split(" ")[1] for n in tree.walk() if " " in n.label and n.kind != "token"}
+    assert rules == {"P1", "S1", "S2", "S4", "S5", "A1", "A2", "A4", "A5", "B2"}
+    # the 24 numbered leaves of the practicum figure
+    assert leaf_traversal(tree) == ["begin", "R", ":=", "1", ";", "while", "Y", ">", "0", "do",
+                                    "begin", "R", ":=", "R", "*", "X", ";", "Y", ":=", "Y",
+                                    "-", "1", "end", "end"]
+    report = traversal_report(tree, parsed)
+    assert "1 begin 2 R 3 := 4 1 5 ;" in report and "24 end" in report
+    assert "синтаксично правильна" in report
+
+
+def test_derivation_tree_parentheses_and_negation() -> None:
+    p = parse("begin X := ((1 + -2)); if ¬(X = 1) then skip else skip end")
+    tree = derivation_tree(p)
+    labels = [n.label for n in tree.walk() if n.kind != "token"]
+    assert labels.count("<вираз> A6") == 2 and "<умова> B5" in labels
+    assert "<умова> B4" in labels and "<оператор> S6" in labels
+    assert leaf_traversal(tree) == [t.text for t in p.tokens if t.kind != "EOF"]
+    ext = derivation_tree(parse("begin X := 7 div 2 end"))
+    assert any("розш. div" in n.label for n in ext.walk())
 
 
 def test_compact_tree_is_smaller(parsed) -> None:  # type: ignore[no-untyped-def]
@@ -109,7 +140,7 @@ def test_html_without_state(parsed) -> None:  # type: ignore[no-untyped-def]
 
 
 def test_html_escapes_script_end() -> None:
-    src = "X := 1 { </script><b> }"
+    src = "begin X := 1 { </script><b> } end"
     p = parse(src)
     term, steps = build_term_with_steps(p.ast, src)
     html = render_html(build_payload(p, term, steps, None, None))

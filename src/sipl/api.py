@@ -37,9 +37,9 @@ class Analysis:
 
 
 def analyze_source(source: str, state: State | None = None,
-                   max_steps: int = DEFAULT_MAX_STEPS) -> Analysis:
+                   max_steps: int = DEFAULT_MAX_STEPS, strict: bool = False) -> Analysis:
     try:
-        parsed = parse(source)
+        parsed = parse(source, strict=strict)
     except SiplSyntaxError as exc:
         return Analysis(source, None, [exc.diagnostic])
     term, steps = build_term_with_steps(parsed.ast, source)
@@ -62,6 +62,7 @@ def report(analysis: Analysis, with_trace: bool = False) -> dict[str, Any]:
         data["ast"] = analysis.parsed.ast.to_sexpr()
         data["term"] = render_text(analysis.term, "ascii")
         data["term_unicode"] = render_text(analysis.term, "unicode")
+        data["warnings"] = [d.to_dict() for d in analysis.parsed.warnings]
     if analysis.result is not None:
         data["result"] = analysis.result.to_dict(with_trace=with_trace)
     return data
