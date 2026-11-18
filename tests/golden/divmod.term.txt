@@ -1,3 +1,3 @@
-AS^Q(0̅) • AS^R(X⇒) • WH(S²(∧, S²(≥, R⇒, Y⇒), S²(>, Y⇒, 0̅)), AS^R(S²(−, R⇒, Y⇒)) • AS^Q(S²(+, Q⇒, 1̅)))
-AS^Q(#0) o AS^R(X=>) o WH(S^2(and, S^2(>=, R=>, Y=>), S^2(>, Y=>, #0)), AS^R(S^2(-, R=>, Y=>)) o AS^Q(S^2(+, Q=>, #1)))
-\mathrm{AS}^{Q}(\overline{0}) \bullet \mathrm{AS}^{R}(X\Rightarrow) \bullet \mathrm{WH}(S^{2}(\wedge, S^{2}(\ge, R\Rightarrow, Y\Rightarrow), S^{2}(>, Y\Rightarrow, \overline{0})), \mathrm{AS}^{R}(S^{2}(-, R\Rightarrow, Y\Rightarrow)) \bullet \mathrm{AS}^{Q}(S^{2}(+, Q\Rightarrow, \overline{1})))
+AS^R(0̅) • WH(S²(gre, X⇒, Y⇒), AS^X(S²(sub, X⇒, Y⇒)) • AS^R(S²(add, R⇒, 1̅)))
+AS^R(#0) o WH(S^2(gre, X=>, Y=>), AS^X(S^2(sub, X=>, Y=>)) o AS^R(S^2(add, R=>, #1)))
+\mathrm{AS}^{R}(\overline{0}) \bullet \mathrm{WH}(S^{2}(\mathit{gre}, X\Rightarrow, Y\Rightarrow), \mathrm{AS}^{X}(S^{2}(\mathit{sub}, X\Rightarrow, Y\Rightarrow)) \bullet \mathrm{AS}^{R}(S^{2}(\mathit{add}, R\Rightarrow, \overline{1})))

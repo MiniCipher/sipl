@@ -1,3 +1,3 @@
-AS^A(0̅) • AS^B(1̅) • AS^K(0̅) • WH(S²(<, K⇒, N⇒), AS^T(S²(+, A⇒, B⇒)) • AS^A(B⇒) • AS^B(T⇒) • AS^K(S²(+, K⇒, 1̅)))
-AS^A(#0) o AS^B(#1) o AS^K(#0) o WH(S^2(<, K=>, N=>), AS^T(S^2(+, A=>, B=>)) o AS^A(B=>) o AS^B(T=>) o AS^K(S^2(+, K=>, #1)))
-\mathrm{AS}^{A}(\overline{0}) \bullet \mathrm{AS}^{B}(\overline{1}) \bullet \mathrm{AS}^{K}(\overline{0}) \bullet \mathrm{WH}(S^{2}(<, K\Rightarrow, N\Rightarrow), \mathrm{AS}^{T}(S^{2}(+, A\Rightarrow, B\Rightarrow)) \bullet \mathrm{AS}^{A}(B\Rightarrow) \bullet \mathrm{AS}^{B}(T\Rightarrow) \bullet \mathrm{AS}^{K}(S^{2}(+, K\Rightarrow, \overline{1})))
+AS^A(0̅) • AS^B(1̅) • AS^K(0̅) • WH(S²(gr, N⇒, K⇒), AS^T(S²(add, A⇒, B⇒)) • AS^A(B⇒) • AS^B(T⇒) • AS^K(S²(add, K⇒, 1̅)))
+AS^A(#0) o AS^B(#1) o AS^K(#0) o WH(S^2(gr, N=>, K=>), AS^T(S^2(add, A=>, B=>)) o AS^A(B=>) o AS^B(T=>) o AS^K(S^2(add, K=>, #1)))
+\mathrm{AS}^{A}(\overline{0}) \bullet \mathrm{AS}^{B}(\overline{1}) \bullet \mathrm{AS}^{K}(\overline{0}) \bullet \mathrm{WH}(S^{2}(\mathit{gr}, N\Rightarrow, K\Rightarrow), \mathrm{AS}^{T}(S^{2}(\mathit{add}, A\Rightarrow, B\Rightarrow)) \bullet \mathrm{AS}^{A}(B\Rightarrow) \bullet \mathrm{AS}^{B}(T\Rightarrow) \bullet \mathrm{AS}^{K}(S^{2}(\mathit{add}, K\Rightarrow, \overline{1})))

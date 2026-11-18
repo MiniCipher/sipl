@@ -1,3 +1,3 @@
-AS^S(0̅) • AS^K(0̅) • WH(S²(<, K⇒, N⇒), AS^K(S²(+, K⇒, 1̅)) • AS^S(S²(+, S⇒, K⇒)))
-AS^S(#0) o AS^K(#0) o WH(S^2(<, K=>, N=>), AS^K(S^2(+, K=>, #1)) o AS^S(S^2(+, S=>, K=>)))
-\mathrm{AS}^{S}(\overline{0}) \bullet \mathrm{AS}^{K}(\overline{0}) \bullet \mathrm{WH}(S^{2}(<, K\Rightarrow, N\Rightarrow), \mathrm{AS}^{K}(S^{2}(+, K\Rightarrow, \overline{1})) \bullet \mathrm{AS}^{S}(S^{2}(+, S\Rightarrow, K\Rightarrow)))
+AS^S(0̅) • AS^K(0̅) • WH(S²(gr, N⇒, K⇒), AS^K(S²(add, K⇒, 1̅)) • AS^S(S²(add, S⇒, K⇒)))
+AS^S(#0) o AS^K(#0) o WH(S^2(gr, N=>, K=>), AS^K(S^2(add, K=>, #1)) o AS^S(S^2(add, S=>, K=>)))
+\mathrm{AS}^{S}(\overline{0}) \bullet \mathrm{AS}^{K}(\overline{0}) \bullet \mathrm{WH}(S^{2}(\mathit{gr}, N\Rightarrow, K\Rightarrow), \mathrm{AS}^{K}(S^{2}(\mathit{add}, K\Rightarrow, \overline{1})) \bullet \mathrm{AS}^{S}(S^{2}(\mathit{add}, S\Rightarrow, K\Rightarrow)))

@@ -1,26 +1,25 @@
-"""Evaluation of a semantic term on a state with a trace of applied rules (SEM-02).
+"""Application of a semantic term to a state with a trace of applied formulas (SEM-02).
 
-Rules (st is a state, ∇ is overlay, ⊥ means "undefined"):
+Formulas of the textbook (Нікітченко, табл. 1.5; ∇ - overlay):
 
-    [AS]     AS^x(A)(st)        = st ∇ [x ↦ A(st)]
-    [SEQ]    (P1 • P2)(st)      = P2(P1(st))
-    [IF-T]   IF(B, P1, P2)(st)  = P1(st),               if B(st) = T
-    [IF-F]   IF(B, P1, P2)(st)  = P2(st),               if B(st) = F
-    [WH-T]   WH(B, P)(st)       = WH(B, P)(P(st)),      if B(st) = T
-    [WH-F]   WH(B, P)(st)       = st,                   if B(st) = F
-    [ID]     id(st)             = st
-    [CONST]  n̄(st) = n          [BCONST]  T̄(st) = T,  F̄(st) = F
-    [DEN]    x⇒(st) = st(x)      (⊥ if x ∉ dom st)
-    [ARITH]  S²(∘, A1, A2)(st)  = A1(st) ∘ A2(st)     (÷ by 0 gives ⊥)
-    [REL]    S²(ρ, A1, A2)(st)  = A1(st) ρ A2(st)
-    [AND]/[OR]  S²(∧/∨, B1, B2)(st) - strong Kleene logic on partial predicates
-    [NOT]    S¹(¬, B)(st)       = ¬B(st)
+    (S^n(f, g1, ..., gn))(st) = f(g1(st), ..., gn(st))                     AF_S
+    AS^x(fa)(st)   = st ∇ [x ↦ fa(st)]                                      AF_AS
+    (fs1 • fs2)(st) = fs2(fs1(st))                                           AF_SEQ
+    IF(fb, fs1, fs2)(st) = fs1(st), if fb(st) = true;  fs2(st), if false     AF_IF
+    WH(fb, fs)(st) = st_n, where st_0 = st, st_k+1 = fs(st_k),
+                     fb(st_0) = ... = fb(st_n-1) = true, fb(st_n) = false    AF_WH
+    x⇒(st) = st(x)      (partial: undefined if x has no value in st)         AF_DNM
+    id(st) = st                                                              AF_ID
+    n̄(st) = n           (constant function, section 1.3.1)                   AF_CONST
 
-Every function is partial: when a value is undefined, the result of the
-whole program is ⊥ and the trace shows the rule where undefinedness arose.
-WH is the least fixed point; it is computed by unfolding, and a configurable
-step limit stops potentially non-terminating computations (result: ⊥ with
-reason ``STEP_LIMIT`` - the evaluator does not *decide* termination).
+Partiality (Зауваження 1.6): if the value of any function occurring in a
+formula is undefined, the result is undefined (strict semantics - also for
+``or``: S²(or, ⊥, true) is undefined, since or(g1(st), g2(st)) needs both values).
+
+If the loop does not terminate, NumItWH and the value of WH are undefined.
+Termination is undecidable, so the evaluator uses a step limit and reports
+``STEP_LIMIT`` ("no result within N formula applications") - it does not
+*decide* non-termination.
 """
 
 from __future__ import annotations
@@ -28,10 +27,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from .render import abbreviate, op_symbol, render_text
+from .render import abbreviate, render_text
 from .state import State, format_state
 from .terms import (
     ARITH,
+    OP_NAMES,
     RELATIONS,
     AssignT,
     BoolConstT,
@@ -48,23 +48,17 @@ from .terms import (
 DEFAULT_MAX_STEPS = 10_000
 
 RULE_DESCRIPTIONS = {
-    "AS": "AS^x(A)(st) = st ∇ [x ↦ A(st)]",
-    "SEQ": "(P1 • P2)(st) = P2(P1(st))",
-    "IF-T": "IF(B, P1, P2)(st) = P1(st), якщо B(st) = T",
-    "IF-F": "IF(B, P1, P2)(st) = P2(st), якщо B(st) = F",
-    "WH-T": "WH(B, P)(st) = WH(B, P)(P(st)), якщо B(st) = T",
-    "WH-F": "WH(B, P)(st) = st, якщо B(st) = F",
-    "ID": "id(st) = st",
-    "CONST": "n̄(st) = n",
-    "BCONST": "T̄(st) = T, F̄(st) = F",
-    "DEN": "x⇒(st) = st(x), ⊥ якщо x ∉ dom(st)",
-    "ARITH": "S²(∘, A1, A2)(st) = A1(st) ∘ A2(st)",
-    "REL": "S²(ρ, A1, A2)(st) = A1(st) ρ A2(st)",
-    "AND": "S²(∧, B1, B2)(st) = B1(st) ∧ B2(st) (сильна логіка Кліні)",
-    "OR": "S²(∨, B1, B2)(st) = B1(st) ∨ B2(st) (сильна логіка Кліні)",
-    "NOT": "S¹(¬, B)(st) = ¬B(st)",
+    "AF_S": "(Sⁿ(f, g1, …, gn))(st) = f(g1(st), …, gn(st))",
+    "AF_AS": "ASˣ(fa)(st) = st ∇ [x ↦ fa(st)]",
+    "AF_SEQ": "(fs1 • fs2)(st) = fs2(fs1(st))",
+    "AF_IF": "IF(fb, fs1, fs2)(st) = fs1(st), якщо fb(st) = true; fs2(st), якщо fb(st) = false",
+    "AF_WH": "WH(fb, fs)(st) = stₙ, де st₀ = st, stₖ₊₁ = fs(stₖ), fb(st₀) = … = fb(stₙ₋₁) = "
+             "true, fb(stₙ) = false",
+    "AF_DNM": "x⇒(st) = st(x)  (не визначено, якщо x не має значення в st)",
+    "AF_ID": "id(st) = st",
+    "AF_CONST": "n̄(st) = n",
 }
-PROGRAM_RULES = frozenset({"AS", "SEQ", "IF-T", "IF-F", "WH-T", "WH-F", "ID"})
+PROGRAM_RULES = frozenset({"AF_AS", "AF_SEQ", "AF_IF", "AF_WH", "AF_ID"})
 
 
 class UndefinedValue(Exception):
@@ -99,10 +93,11 @@ class TraceEntry:
     value: int | bool | None = None
     explanation: str = ""
     undefined: bool = False
+    note: str = ""  # e.g. "true-гілка", "ітерація 2", "вихід із циклу"
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "index": self.index, "depth": self.depth, "rule": self.rule,
+            "index": self.index, "depth": self.depth, "rule": self.rule, "note": self.note,
             "term_id": self.term_id, "ast_id": self.ast_id, "term": self.term_text,
             "state_in": self.state_in, "state_out": self.state_out, "value": self.value,
             "level": self.level, "parent": self.parent, "explanation": self.explanation,
@@ -160,14 +155,28 @@ class EvalResult:
         return data
 
 
-def _tv(b: bool) -> str:
-    return "T" if b else "F"
+def show_value(v: int | bool | None) -> str:
+    if v is None:
+        return "⊥"
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    return str(v)
 
 
-def _int_div(a: int, b: int) -> int:
-    """Integer division truncated toward zero (÷)."""
-    q = abs(a) // abs(b)
-    return q if (a >= 0) == (b >= 0) else -q
+def _apply(op: str, a: int, b: int) -> int | bool:
+    """Basic functions of the algebra on Int (div/mod: floor division, b ≠ 0)."""
+    if op == "+":
+        return a + b
+    if op == "-":
+        return a - b
+    if op == "*":
+        return a * b
+    if op == "/":
+        return a // b
+    if op == "mod":
+        return a % b
+    return {"<": a < b, "<=": a <= b, "=": a == b, "<>": a != b, ">": a > b,
+            ">=": a >= b}[op]
 
 
 @dataclass
@@ -181,11 +190,14 @@ class Evaluator:
     _stack: list[int] = field(default_factory=list)
 
     # ------------------------------------------------------------- helpers
-    def _t(self, term: Term) -> str:
-        return abbreviate(render_text(term, self.style), self.term_width)
+    def _t(self, term: Term, width: int | None = None) -> str:
+        return abbreviate(render_text(term, self.style), width or self.term_width)
 
     def _st(self, i: int) -> str:
         return f"st{i}"
+
+    def _state(self, i: int) -> str:
+        return format_state(self.states[i], self.style)
 
     def _enter(self, rule: str, term: Term, si: int, level: str) -> TraceEntry:
         if len(self.trace) >= self.max_steps:
@@ -200,9 +212,9 @@ class Evaluator:
     def _mark_undefined(self, entry: TraceEntry, exc: UndefinedValue) -> None:
         entry.undefined = True
         if not entry.explanation:
-            text = f"({entry.term_text})" if entry.rule == "SEQ" else entry.term_text
-            entry.explanation = (f"{text}({self._st(entry.state_in)}) = ⊥ "
-                                 f"(невизначено, бо {exc.message})")
+            text = f"({entry.term_text})" if entry.rule == "AF_SEQ" else entry.term_text
+            entry.explanation = (f"{text}({self._st(entry.state_in)}) не визначене, "
+                                 f"бо {exc.message} (Зауваження 1.6)")
 
     # ------------------------------------------------------------- public
     def run(self, term: Term, state: State) -> EvalResult:
@@ -213,8 +225,15 @@ class Evaluator:
         except UndefinedValue as exc:
             return self._undefined(state, exc.code, exc.message, exc.term)
         except StepLimitExceeded as exc:
-            msg = (f"перевищено ліміт у {exc.limit} кроків обчислення: можливо, програма не "
-                   "завершується (WH не досягає точки виходу) - результат вважається ⊥")
+            for e in self.trace:  # unfinished applications (e.g. the loop itself)
+                if e.state_out is not None:
+                    continue
+                e.undefined = True
+                if not e.explanation:
+                    e.explanation = (f"{e.term_text}({self._st(e.state_in)}): результат не "
+                                     f"отримано за {exc.limit} застосувань формул")
+            msg = (f"за {exc.limit} застосувань формул результат не отримано: цикл, імовірно, "
+                   "не завершується (NumItWH невизначене) - значення вважається невизначеним")
             return self._undefined(state, "STEP_LIMIT", msg, exc.term)
         return EvalResult("defined", dict(state), self.states[final_idx], self.states,
                           self.trace, self.transitions, len(self.trace))
@@ -225,11 +244,10 @@ class Evaluator:
 
     # ------------------------------------------------------ program terms
     def exec(self, t: Term, si: int) -> int:
-        rule = {AssignT: "AS", CompT: "SEQ", IfT: "IF", WhileT: "WH", IdT: "ID"}.get(type(t))
+        rule = {AssignT: "AF_AS", CompT: "AF_SEQ", IfT: "AF_IF", WhileT: "AF_WH",
+                IdT: "AF_ID"}.get(type(t))
         if rule is None:
             raise TypeError(f"{t.kind} is not a program term")
-        if isinstance(t, WhileT):
-            return self._exec_while(t, si)
         entry = self._enter(rule, t, si, "program")
         self._stack.append(entry.index)
         try:
@@ -253,55 +271,76 @@ class Evaluator:
             self.transitions.append(Transition(len(self.transitions), si, so, t.var, value,
                                                t.id, t.ast_id, entry.index))
             entry.value = value
-            entry.explanation = (f"{entry.term_text}({st(si)}) = {st(si)} ∇ [{t.var} ↦ {value}]"
-                                 f" = {st(so)} = {format_state(new, self.style)}")
+            fa = self._t(t.expr, 30)
+            entry.explanation = (f"{entry.term_text}({st(si)}) = {st(si)} ∇ [{t.var} ↦ "
+                                 f"{fa}({st(si)})] = {st(si)} ∇ [{t.var} ↦ {value}] = "
+                                 f"{format_state(new, self.style)} = {st(so)}")
             return so
         if isinstance(t, CompT):
-            p1, p2 = self._t(t.first), self._t(t.second)
+            fs1, fs2 = self._t(t.first, 30), self._t(t.second, 30)
             mid = self.exec(t.first, si)
             so = self.exec(t.second, mid)
-            entry.explanation = (f"({p1} • {p2})({st(si)}) = P2(P1({st(si)})) = "
-                                 f"P2({st(mid)}) = {st(so)}")
+            entry.explanation = (f"({fs1} • {fs2})({st(si)}) = fs2(fs1({st(si)})) = "
+                                 f"fs2({st(mid)}) = {st(so)}")
             return so
         if isinstance(t, IfT):
             b = self.eval_p(t.cond, si)
-            entry.rule = "IF-T" if b else "IF-F"
-            branch = t.then if b else t.other
-            so = self.exec(branch, si)
-            entry.explanation = (f"B({st(si)}) = {_tv(b)}, де B = {self._t(t.cond)} ⇒ "
-                                 f"IF(...)({st(si)}) = {'P1' if b else 'P2'}({st(si)}) = {st(so)}")
+            entry.note = "fb = true" if b else "fb = false"
+            so = self.exec(t.then if b else t.other, si)
+            which = "fs1" if b else "fs2"
+            entry.explanation = (f"IF(fb, fs1, fs2)({st(si)}), fb = {self._t(t.cond, 30)}: "
+                                 f"fb({st(si)}) = {show_value(b)} ⇒ {which}({st(si)}) = {st(so)}")
             return so
+        if isinstance(t, WhileT):
+            return self._exec_while(t, si, entry)
         if isinstance(t, IdT):
             entry.explanation = f"id({st(si)}) = {st(si)}"
             return si
         raise TypeError(t)
 
-    def _exec_while(self, t: WhileT, si: int) -> int:
+    def _exec_while(self, t: WhileT, si: int, entry: TraceEntry) -> int:
+        """AF_WH: st_0 = st, st_k+1 = fs(st_k) while fb(st_k) = true."""
         st = self._st
-        iteration = 0
+        start = si
+        seq = [si]
+        k = 0
+        fb = self._t(t.cond, 30)
         while True:
-            iteration += 1
-            entry = self._enter("WH", t, si, "program")
-            self._stack.append(entry.index)
+            check = self._enter("AF_WH", t, si, "program")
+            self._stack.append(check.index)
             try:
                 b = self.eval_p(t.cond, si)
                 if not b:
-                    entry.rule = "WH-F"
-                    entry.state_out = si
-                    entry.explanation = (f"ітерація {iteration}: B({st(si)}) = F, де B = "
-                                         f"{self._t(t.cond)} ⇒ WH(B, P)({st(si)}) = {st(si)}")
-                    return si
-                entry.rule = "WH-T"
+                    check.note = f"fb(st{k}′) = false"
+                    check.state_out = si
+                    check.explanation = (f"fb(st{k}′) = {fb}({st(si)}) = false ⇒ цикл "
+                                         f"завершено, n = NumItWH = {k}")
+                    break
+                check.note = f"ітерація {k + 1}"
                 so = self.exec(t.body, si)
-                entry.state_out = so
-                entry.explanation = (f"ітерація {iteration}: B({st(si)}) = T ⇒ WH(B, P)({st(si)})"
-                                     f" = WH(B, P)(P({st(si)})) = WH(B, P)({st(so)})")
+                check.state_out = so
+                check.explanation = (f"ітерація {k + 1}: fb(st{k}′) = {fb}({st(si)}) = true ⇒ "
+                                     f"st{k + 1}′ = fs(st{k}′) = fs({st(si)}) = {st(so)}")
             except UndefinedValue as exc:
-                self._mark_undefined(entry, exc)
+                self._mark_undefined(check, exc)
                 raise
             finally:
                 self._stack.pop()
             si = so
+            seq.append(si)
+            k += 1
+        chain = ", ".join(f"st{i}′ = {st(s)}" for i, s in enumerate(seq[:4]))
+        if len(seq) > 4:
+            chain += f", …, st{len(seq) - 1}′ = {st(seq[-1])}"
+        entry.note = f"NumItWH = {k}"
+        entry.explanation = (f"WH(fb, fs)({st(start)}) = st{k}′ = {st(si)}, де {chain}; "
+                             + ("fb(st0′) = true" if k == 1 else
+                                f"fb = true на st0′…st{k - 1}′")
+                             + f", fb(st{k}′) = false"
+                             if k else
+                             f"WH(fb, fs)({st(start)}) = st0′ = {st(start)}, бо fb({st(start)}) "
+                             f"= false (жодної ітерації)")
+        return si
 
     # --------------------------------------------------- function terms
     def eval_f(self, t: Term, si: int) -> int:
@@ -315,15 +354,12 @@ class Evaluator:
         return v
 
     def _eval(self, t: Term, si: int) -> int | bool:
-        if isinstance(t, ConstT):
-            rule = "CONST"
-        elif isinstance(t, BoolConstT):
-            rule = "BCONST"
+        if isinstance(t, (ConstT, BoolConstT)):
+            rule = "AF_CONST"
         elif isinstance(t, DenameT):
-            rule = "DEN"
+            rule = "AF_DNM"
         elif isinstance(t, SuperT):
-            rule = ("ARITH" if t.op in ARITH else "REL" if t.op in RELATIONS
-                    else t.op.upper())
+            rule = "AF_S"
         else:
             raise TypeError(f"{t.kind} is not an expression term")
         entry = self._enter(rule, t, si, "expr")
@@ -341,68 +377,45 @@ class Evaluator:
 
     def _eval_body(self, t: Term, si: int, entry: TraceEntry) -> int | bool:
         st = self._st(si)
-        if isinstance(t, ConstT):
-            entry.explanation = f"{entry.term_text}({st}) = {t.value}"
-            return t.value
-        if isinstance(t, BoolConstT):
-            entry.explanation = f"{entry.term_text}({st}) = {_tv(t.value)}"
+        if isinstance(t, (ConstT, BoolConstT)):
+            entry.explanation = f"{entry.term_text}({st}) = {show_value(t.value)}"
             return t.value
         if isinstance(t, DenameT):
             state = self.states[si]
             if t.var not in state:
-                entry.explanation = (f"{entry.term_text}({st}) = ⊥: змінна {t.var} не має "
-                                     f"значення у стані {st} ({t.var} ∉ dom {st})")
-                raise UndefinedValue("UNBOUND", f"змінна {t.var} не визначена у стані {st}", t)
+                entry.explanation = (f"{t.var}⇒({st}) не визначене: змінна {t.var} не має "
+                                     f"значення у стані {st} = {self._state(si)}")
+                raise UndefinedValue("UNBOUND", f"{t.var}⇒({st}) не визначене "
+                                     f"({t.var} не має значення у {st})", t)
             v = state[t.var]
-            entry.explanation = f"{entry.term_text}({st}) = {st}({t.var}) = {v}"
+            entry.explanation = f"{t.var}⇒({st}) = {st}({t.var}) = {v}"
             return v
         assert isinstance(t, SuperT)
-        sym = op_symbol(t.op, self.style)
+        name = OP_NAMES[t.op]
         n = "¹" if len(t.args) == 1 else "²"
-        head = f"S{n}({sym}, …)({st})"
+        args = [self._t(a, 24) for a in t.args]
+        head = (f"S{n}({name}, {', '.join(args)})({st}) = "
+                f"{name}({', '.join(f'{a}({st})' for a in args)})")
+        # strict superposition: every argument must be defined (Зауваження 1.6)
+        values = [self._eval(a, si) for a in t.args]
+        shown = ", ".join(show_value(v) for v in values)
         if t.op == "not":
-            b = self.eval_p(t.args[0], si)
-            entry.explanation = f"{head} = ¬{_tv(b)} = {_tv(not b)}"
-            return not b
-        if t.op in ("and", "or"):
-            left = self._try_p(t.args[0], si)
-            right = self._try_p(t.args[1], si)
-            show = {True: "T", False: "F", None: "⊥"}
-            if t.op == "and":
-                res = False if (left is False or right is False) else (
-                    True if (left and right) else None)
-            else:
-                res = True if (left is True or right is True) else (
-                    False if (left is False and right is False) else None)
-            entry.explanation = f"{head} = {show[left]} {sym} {show[right]} = {show[res]}"
-            if res is None:
-                raise UndefinedValue("UNDEFINED_CONDITION",
-                                     f"умова {self._t(t)} невизначена у стані {st}", t)
-            return res
-        a = self.eval_f(t.args[0], si)
-        b2 = self.eval_f(t.args[1], si)
-        if t.op in ARITH:
-            if t.op == "/" and b2 == 0:
-                entry.explanation = f"{head} = {a} {sym} 0 = ⊥ (ділення на нуль)"
-                raise UndefinedValue("DIV_ZERO", f"ділення на нуль у {self._t(t)}", t)
-            val = {"+": a + b2, "-": a - b2, "*": a * b2}.get(t.op)
-            if val is None:
-                val = _int_div(a, b2)
-            entry.explanation = f"{head} = {a} {sym} {b2} = {val}"
-            return val
-        res2 = {"<": a < b2, "<=": a <= b2, "=": a == b2, "<>": a != b2, ">": a > b2,
-                ">=": a >= b2}[t.op]
-        entry.explanation = f"{head} = {a} {sym} {b2} = {_tv(res2)}"
-        return res2
-
-    def _try_p(self, t: Term, si: int) -> bool | None:
-        try:
-            return self.eval_p(t, si)
-        except UndefinedValue:
-            return None
+            res: int | bool = not values[0]
+        elif t.op in ("and", "or"):
+            res = (values[0] and values[1]) if t.op == "and" else (values[0] or values[1])
+        else:
+            a, b = values
+            assert isinstance(a, int) and isinstance(b, int)
+            if t.op in ("/", "mod") and b == 0:
+                entry.explanation = f"{head} = {name}({shown}) не визначене (ділення на 0)"
+                raise UndefinedValue("DIV_ZERO", f"{name}({a}, 0) не визначене", t)
+            res = _apply(t.op, a, b)
+        assert t.op in ARITH or t.op in RELATIONS or t.op in ("and", "or", "not")
+        entry.explanation = f"{head} = {name}({shown}) = {show_value(res)}"
+        return res
 
 
 def evaluate(term: Term, state: State, max_steps: int = DEFAULT_MAX_STEPS,
              style: str = "unicode") -> EvalResult:
-    """Apply the semantic term to the state; returns final state or ⊥ with the full trace."""
+    """Apply the semantic term to the state; returns the final state or ⊥ with the trace."""
     return Evaluator(max_steps=max_steps, style=style).run(term, state)

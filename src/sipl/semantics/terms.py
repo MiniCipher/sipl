@@ -10,9 +10,9 @@ function on states built from basic functions by compositions:
 ``WH(B, P)``           cycle composition
 ``id``                 identity function (skip)
 ``x⇒``                 denaming function (розіменування)
-``n̄``, ``T̄``, ``F̄``     constant functions
-``S²(op, A1, A2)``     superposition of a binary operation
-``S¹(¬, B)``           superposition of a unary operation
+``n̄``                  constant function n̄(st) = n
+``S²(f, A1, A2)``      superposition of a binary function (add, sub, mult, eq, gr, or, ...)
+``S¹(neg, B)``         superposition of the unary function neg
 =====================  ==================================================
 """
 
@@ -146,8 +146,16 @@ class DenameT(Term):
         return {"var": self.var}
 
 
-#: operation symbols: ASCII op -> sort of the result
-ARITH = {"+", "-", "*", "/"}
+#: canonical operator -> name of the basic function of the algebra A_SIPL
+#: (textbook, section 1.3.1: add, sub, mult, eq, gr, or, neg; the practicum also
+#: uses gre, less, div, mod; leq, neq, and are named in the same style)
+OP_NAMES = {
+    "+": "add", "-": "sub", "*": "mult", "/": "div", "mod": "mod",
+    "=": "eq", ">": "gr", "<": "less", "<=": "leq", "<>": "neq", ">=": "gre",
+    "or": "or", "and": "and", "not": "neg",
+}
+CORE_OPS = frozenset({"+", "-", "*", "=", ">", "or", "not"})
+ARITH = {"+", "-", "*", "/", "mod"}
 RELATIONS = {"<", "<=", "=", "<>", ">", ">="}
 LOGIC = {"and", "or", "not"}
 
@@ -162,11 +170,16 @@ class SuperT(Term):
     def sort(self) -> str:  # type: ignore[override]
         return "function" if self.op in ARITH else "predicate"
 
+    @property
+    def name(self) -> str:
+        """Name of the basic function: add, sub, mult, eq, gr, or, neg, ..."""
+        return OP_NAMES[self.op]
+
     def children(self) -> list[Term]:
         return list(self.args)
 
     def attrs(self) -> dict[str, Any]:
-        return {"op": self.op, "arity": len(self.args)}
+        return {"op": self.op, "function": OP_NAMES[self.op], "arity": len(self.args)}
 
 
 def assign_ids(root: Term) -> None:

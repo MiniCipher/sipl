@@ -1,3 +1,3 @@
-AS^R(1̅) • WH(S²(>, Y⇒, 0̅), AS^R(S²(×, R⇒, X⇒)) • AS^Y(S²(−, Y⇒, 1̅)))
-AS^R(#1) o WH(S^2(>, Y=>, #0), AS^R(S^2(*, R=>, X=>)) o AS^Y(S^2(-, Y=>, #1)))
-\mathrm{AS}^{R}(\overline{1}) \bullet \mathrm{WH}(S^{2}(>, Y\Rightarrow, \overline{0}), \mathrm{AS}^{R}(S^{2}(\cdot, R\Rightarrow, X\Rightarrow)) \bullet \mathrm{AS}^{Y}(S^{2}(-, Y\Rightarrow, \overline{1})))
+AS^R(1̅) • WH(S²(gr, Y⇒, 0̅), AS^R(S²(mult, R⇒, X⇒)) • AS^Y(S²(sub, Y⇒, 1̅)))
+AS^R(#1) o WH(S^2(gr, Y=>, #0), AS^R(S^2(mult, R=>, X=>)) o AS^Y(S^2(sub, Y=>, #1)))
+\mathrm{AS}^{R}(\overline{1}) \bullet \mathrm{WH}(S^{2}(\mathit{gr}, Y\Rightarrow, \overline{0}), \mathrm{AS}^{R}(S^{2}(\mathit{mult}, R\Rightarrow, X\Rightarrow)) \bullet \mathrm{AS}^{Y}(S^{2}(\mathit{sub}, Y\Rightarrow, \overline{1})))

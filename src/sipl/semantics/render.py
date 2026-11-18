@@ -1,5 +1,9 @@
 """Rendering of semantic terms: unicode (course notation), ascii, latex.
 
+Course notation (textbook, sections 1.3.3-1.3.6): ``AS^x(...)``, ``•``,
+``IF(...)``, ``WH(...)``, ``id``, ``x⇒``, constants with a bar ``n̄``,
+superpositions with function names ``S²(add, X⇒, 1̄)``, ``S¹(neg, ...)``.
+
 Rendering produces a :class:`Piece` tree in which every sub-term keeps its
 ``term_id``; this lets the HTML visualizer make each sub-term clickable.
 """
@@ -9,6 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .terms import (
+    OP_NAMES,
     AssignT,
     BoolConstT,
     CompT,
@@ -23,21 +28,14 @@ from .terms import (
 
 STYLES = ("unicode", "ascii", "latex")
 
-_OPS = {
-    "unicode": {"+": "+", "-": "−", "*": "×", "/": "÷", "<": "<", "<=": "≤", "=": "=",
-                "<>": "≠", ">": ">", ">=": "≥", "and": "∧", "or": "∨", "not": "¬"},
-    "ascii": {"+": "+", "-": "-", "*": "*", "/": "/", "<": "<", "<=": "<=", "=": "=",
-              "<>": "<>", ">": ">", ">=": ">=", "and": "and", "or": "or", "not": "not"},
-    "latex": {"+": "+", "-": "-", "*": r"\cdot", "/": r"\div", "<": "<", "<=": r"\le",
-              "=": "=", "<>": r"\ne", ">": ">", ">=": r"\ge", "and": r"\wedge",
-              "or": r"\vee", "not": r"\neg"},
-}
 _COMP = {"unicode": " • ", "ascii": " o ", "latex": r" \bullet "}
 _SUPERSCRIPT = {"1": "¹", "2": "²", "3": "³"}
 
 
 def op_symbol(op: str, style: str = "unicode") -> str:
-    return _OPS[style][op]
+    """Name of the basic function of the algebra for an operator (add, gr, neg, ...)."""
+    name = OP_NAMES[op]
+    return r"\mathit{" + name + "}" if style == "latex" else name
 
 
 def overline(text: str) -> str:
@@ -93,9 +91,9 @@ def render(term: Term, style: str = "unicode") -> Piece:
             txt = r"\overline{" + str(t.value) + "}"
         return Piece(t.id, [txt])
     if isinstance(t, BoolConstT):
-        letter = "T" if t.value else "F"
-        txt = {"unicode": overline(letter), "ascii": f"#{letter}",
-               "latex": r"\overline{" + letter + "}"}[style]
+        word = "true" if t.value else "false"
+        txt = {"unicode": overline(word), "ascii": f"#{word}",
+               "latex": r"\overline{\mathit{" + word + "}}"}[style]
         return Piece(t.id, [txt])
     if isinstance(t, DenameT):
         arrow = {"unicode": "⇒", "ascii": "=>", "latex": r"\Rightarrow"}[style]
