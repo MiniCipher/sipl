@@ -1,0 +1,32 @@
+{
+  "description": "gcd textbook",
+  "category": "semantics",
+  "language": "core",
+  "syntax": "ok",
+  "ast": "(while (not (= (var M) (var N))) (if (> (var M) (var N)) (assign M (- (var M) (var N))) (assign N (- (var N) (var M)))))",
+  "term": "WH(S^1(neg, S^2(eq, M=>, N=>)), IF(S^2(gr, M=>, N=>), AS^M(S^2(sub, M=>, N=>)), AS^N(S^2(sub, N=>, M=>))))",
+  "runs": [
+    {
+      "state": {
+        "M": 8,
+        "N": 16
+      },
+      "result": "defined",
+      "final_state": {
+        "M": 8,
+        "N": 8
+      }
+    },
+    {
+      "state": {
+        "M": 12,
+        "N": 18
+      },
+      "result": "defined",
+      "final_state": {
+        "M": 6,
+        "N": 6
+      }
+    }
+  ]
+}

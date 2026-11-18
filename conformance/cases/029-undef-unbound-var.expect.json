@@ -1,0 +1,23 @@
+{
+  "description": "undef unbound var",
+  "category": "undefined",
+  "language": "core",
+  "syntax": "ok",
+  "runs": [
+    {
+      "state": {},
+      "result": "undefined",
+      "undefined_code": "UNBOUND"
+    },
+    {
+      "state": {
+        "X": 1
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 1,
+        "Y": 2
+      }
+    }
+  ]
+}

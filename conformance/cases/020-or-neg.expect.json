@@ -1,0 +1,34 @@
+{
+  "description": "or neg",
+  "category": "semantics",
+  "language": "core",
+  "syntax": "ok",
+  "ast": "(if (or (not (= (var X) (num 1))) (> (var Y) (num 2))) (assign R (num 1)) (assign R (num 0)))",
+  "term": "IF(S^2(or, S^1(neg, S^2(eq, X=>, #1)), S^2(gr, Y=>, #2)), AS^R(#1), AS^R(#0))",
+  "runs": [
+    {
+      "state": {
+        "X": 2,
+        "Y": 0
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 2,
+        "Y": 0,
+        "R": 1
+      }
+    },
+    {
+      "state": {
+        "X": 1,
+        "Y": 0
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 1,
+        "Y": 0,
+        "R": 0
+      }
+    }
+  ]
+}

@@ -1,1 +1,0 @@
-if (X + 1) * 2 < (10) and (X < 4) then R := 1 else R := 0

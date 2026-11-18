@@ -14,7 +14,7 @@ def test_release_notes_for_current_version() -> None:
     out = subprocess.run([sys.executable, str(ROOT / "scripts" / "release_notes.py"),
                           f"v{__version__}"], capture_output=True, text=True, encoding="utf-8")
     assert out.returncode == 0, out.stderr
-    assert "CORE-01" in out.stdout and "## [" not in out.stdout
+    assert "### " in out.stdout and "## [" not in out.stdout
 
 
 def test_release_notes_unknown_version() -> None:

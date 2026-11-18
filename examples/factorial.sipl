@@ -2,7 +2,7 @@
 begin
   F := 1;
   I := 1;
-  while I <= N do
+  while ¬(I > N) do
   begin
     F := F * I;
     I := I + 1

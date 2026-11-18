@@ -1,1 +1,0 @@
-if 1 < 2 and 2 <= 2 and 3 = 3 and 3 <> 4 and 5 > 4 and 5 >= 5 then R := 1 else R := 0

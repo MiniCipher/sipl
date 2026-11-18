@@ -1,0 +1,20 @@
+{
+  "description": "if then seq priority",
+  "category": "semantics",
+  "language": "core",
+  "syntax": "ok",
+  "ast": "(seq (if (> (var X) (num 0)) (assign Y (num 1)) (assign Y (num 2))) (assign Z (num 3)))",
+  "runs": [
+    {
+      "state": {
+        "X": 1
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 1,
+        "Y": 1,
+        "Z": 3
+      }
+    }
+  ]
+}

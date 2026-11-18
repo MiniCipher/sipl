@@ -1,0 +1,30 @@
+{
+  "description": "factorial",
+  "category": "semantics",
+  "language": "core",
+  "syntax": "ok",
+  "runs": [
+    {
+      "state": {
+        "N": 5
+      },
+      "result": "defined",
+      "final_state": {
+        "N": 5,
+        "F": 120,
+        "I": 6
+      }
+    },
+    {
+      "state": {
+        "N": 0
+      },
+      "result": "defined",
+      "final_state": {
+        "N": 0,
+        "F": 1,
+        "I": 1
+      }
+    }
+  ]
+}

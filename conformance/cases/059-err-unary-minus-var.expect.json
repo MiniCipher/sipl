@@ -1,0 +1,9 @@
+{
+  "description": "unary minus var",
+  "category": "syntax-error",
+  "syntax": "error",
+  "error": {
+    "line": 1,
+    "column": 12
+  }
+}

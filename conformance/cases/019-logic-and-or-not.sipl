@@ -1,1 +1,0 @@
-if not (X = 1) and (Y > 2 or false) then R := 1 else R := 0

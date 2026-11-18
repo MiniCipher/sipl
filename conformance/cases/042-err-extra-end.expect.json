@@ -1,0 +1,9 @@
+{
+  "description": "extra end",
+  "category": "syntax-error",
+  "syntax": "error",
+  "error": {
+    "line": 1,
+    "column": 18
+  }
+}

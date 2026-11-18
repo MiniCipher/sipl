@@ -1,0 +1,16 @@
+{
+  "description": "undef infinite loop",
+  "category": "undefined",
+  "language": "core",
+  "syntax": "ok",
+  "runs": [
+    {
+      "state": {
+        "X": 0
+      },
+      "result": "undefined",
+      "undefined_code": "STEP_LIMIT",
+      "max_steps": 500
+    }
+  ]
+}

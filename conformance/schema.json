@@ -3,42 +3,113 @@
   "$id": "https://example.org/sipl/conformance-case.schema.json",
   "title": "SIPL conformance case expectation",
   "type": "object",
-  "required": ["category", "syntax"],
+  "required": [
+    "category",
+    "syntax"
+  ],
   "properties": {
-    "description": {"type": "string"},
-    "category": {"enum": ["semantics", "undefined", "syntax-error"]},
-    "syntax": {"enum": ["ok", "error"]},
+    "description": {
+      "type": "string"
+    },
+    "category": {
+      "enum": [
+        "semantics",
+        "undefined",
+        "syntax-error"
+      ]
+    },
+    "syntax": {
+      "enum": [
+        "ok",
+        "error"
+      ]
+    },
     "error": {
       "type": "object",
-      "required": ["line", "column"],
+      "required": [
+        "line",
+        "column"
+      ],
       "properties": {
-        "line": {"type": "integer", "minimum": 1},
-        "column": {"type": "integer", "minimum": 1}
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 1
+        }
       },
       "additionalProperties": false
     },
-    "ast": {"type": "string"},
-    "term": {"type": "string"},
+    "ast": {
+      "type": "string"
+    },
+    "term": {
+      "type": "string"
+    },
     "runs": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["state", "result"],
+        "required": [
+          "state",
+          "result"
+        ],
         "properties": {
-          "state": {"$ref": "#/$defs/state"},
-          "result": {"enum": ["defined", "undefined"]},
-          "final_state": {"$ref": "#/$defs/state"},
-          "undefined_code": {"type": "string"},
-          "max_steps": {"type": "integer", "minimum": 1}
+          "state": {
+            "$ref": "#/$defs/state"
+          },
+          "result": {
+            "enum": [
+              "defined",
+              "undefined"
+            ]
+          },
+          "final_state": {
+            "$ref": "#/$defs/state"
+          },
+          "undefined_code": {
+            "type": "string"
+          },
+          "max_steps": {
+            "type": "integer",
+            "minimum": 1
+          }
         },
         "additionalProperties": false
       }
+    },
+    "language": {
+      "enum": [
+        "core",
+        "extension"
+      ],
+      "description": "core - program of the course BNF (accepted with --strict); extension - uses extensions (rejected with --strict)"
     }
   },
   "allOf": [
-    {"if": {"properties": {"syntax": {"const": "error"}}}, "then": {"required": ["error"]}}
+    {
+      "if": {
+        "properties": {
+          "syntax": {
+            "const": "error"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "error"
+        ]
+      }
+    }
   ],
   "$defs": {
-    "state": {"type": "object", "additionalProperties": {"type": "integer"}}
+    "state": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer"
+      }
+    }
   }
 }

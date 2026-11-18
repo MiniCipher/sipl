@@ -1,0 +1,9 @@
+{
+  "description": "missing then",
+  "category": "syntax-error",
+  "syntax": "error",
+  "error": {
+    "line": 1,
+    "column": 16
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "description": "negative constant",
+  "category": "semantics",
+  "language": "core",
+  "syntax": "ok",
+  "ast": "(seq (assign X (num -3)) (assign Y (- (var X) (num -2))))",
+  "term": "AS^X(#-3) o AS^Y(S^2(sub, X=>, #-2))",
+  "runs": [
+    {
+      "state": {},
+      "result": "defined",
+      "final_state": {
+        "X": -3,
+        "Y": -1
+      }
+    }
+  ]
+}

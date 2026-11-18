@@ -1,6 +1,7 @@
 {
   "description": "assign const",
   "category": "semantics",
+  "language": "core",
   "syntax": "ok",
   "ast": "(assign X (num 5))",
   "term": "AS^X(#5)",

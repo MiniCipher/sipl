@@ -1,0 +1,17 @@
+{
+  "description": "block nesting",
+  "category": "semantics",
+  "language": "core",
+  "syntax": "ok",
+  "ast": "(seq (block (assign X (num 1))) (block (skip)))",
+  "term": "AS^X(#1) o id",
+  "runs": [
+    {
+      "state": {},
+      "result": "defined",
+      "final_state": {
+        "X": 1
+      }
+    }
+  ]
+}

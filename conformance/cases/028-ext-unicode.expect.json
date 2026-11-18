@@ -1,0 +1,28 @@
+{
+  "description": "ext unicode",
+  "category": "semantics",
+  "language": "extension",
+  "syntax": "ok",
+  "runs": [
+    {
+      "state": {
+        "X": 2
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 2,
+        "R": 6
+      }
+    },
+    {
+      "state": {
+        "X": 5
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 5,
+        "R": 2
+      }
+    }
+  ]
+}

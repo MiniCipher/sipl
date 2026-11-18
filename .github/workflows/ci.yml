@@ -51,8 +51,8 @@ jobs:
         run: python conformance/run_conformance.py --impl "sipl analyze"
       - name: CLI smoke test
         run: |
-          sipl check examples/power.sipl
-          sipl eval examples/power.sipl --state "X=2, Y=3" --explain
+          sipl check examples/power.sipl --strict
+          sipl eval examples/power.sipl --state "X=5, Y=2" --explain
 
   build:
     name: Build package
@@ -70,7 +70,7 @@ jobs:
           python -m venv /tmp/clean
           /tmp/clean/bin/pip install dist/*.whl
           /tmp/clean/bin/sipl --version
-          /tmp/clean/bin/sipl eval examples/gcd.sipl --state "X=12, Y=18"
+          /tmp/clean/bin/sipl eval examples/gcd.sipl --state "M=8, N=16"
       - uses: actions/upload-artifact@v4
         with:
           name: dist

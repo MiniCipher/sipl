@@ -1,0 +1,1 @@
+begin if not X = 1 or X > 5 then R := 1 else R := 0 end

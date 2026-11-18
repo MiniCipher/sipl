@@ -22,7 +22,7 @@ def run_suite(*args: str) -> subprocess.CompletedProcess[str]:
 
 def test_case_files_are_well_formed() -> None:
     cases = sorted((CONFORMANCE / "cases").glob("*.sipl"))
-    assert len(cases) >= 40
+    assert len(cases) >= 50
     categories = set()
     for c in cases:
         exp = json.loads(c.with_name(c.stem + ".expect.json").read_text("utf-8"))
@@ -46,7 +46,7 @@ def test_full_suite_passes(tmp_path: Path) -> None:
 
 def test_runner_detects_wrong_expectations(tmp_path: Path) -> None:
     src = CONFORMANCE / "cases"
-    for name in ("001-assign-const", "033-err-trailing-semicolon"):
+    for name in ("001-assign-const", "037-err-trailing-semicolon"):
         for ext in (".sipl", ".expect.json"):
             shutil.copy(src / f"{name}{ext}", tmp_path / f"{name}{ext}")
     broken = tmp_path / "001-assign-const.expect.json"
@@ -54,7 +54,7 @@ def test_runner_detects_wrong_expectations(tmp_path: Path) -> None:
     exp["runs"][0]["final_state"] = {"X": 6}
     exp["ast"] = "(assign X (num 6))"
     broken.write_text(json.dumps(exp), encoding="utf-8")
-    err = tmp_path / "033-err-trailing-semicolon.expect.json"
+    err = tmp_path / "037-err-trailing-semicolon.expect.json"
     exp = json.loads(err.read_text("utf-8"))
     exp["error"]["column"] = 1
     err.write_text(json.dumps(exp), encoding="utf-8")

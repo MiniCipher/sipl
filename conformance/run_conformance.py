@@ -36,8 +36,10 @@ def _norm_term(text: str) -> str:
 
 
 def call_impl(impl: list[str], case_file: Path, state: dict[str, int] | None,
-              max_steps: int | None, timeout: float) -> dict[str, Any]:
+              max_steps: int | None, timeout: float, strict: bool = False) -> dict[str, Any]:
     cmd = impl + [str(case_file)]
+    if strict:
+        cmd.append("--strict")
     if state is not None:
         cmd += ["--state", json.dumps(state)]
     if max_steps is not None:
@@ -78,6 +80,13 @@ def check_case(impl: list[str], sipl: Path, expect: dict[str, Any],
                     failures.append(f"error position: expected {err['line']}:{err['column']}, "
                                     f"got {d.get('line')}:{d.get('column')} ({d.get('message')})")
         return failures
+    lang = expect.get("language")
+    if lang in ("core", "extension"):
+        strict = call_impl(impl, sipl, None, None, timeout, strict=True)
+        if bool(strict.get("syntax_ok")) != (lang == "core"):
+            what = ("core language must be accepted" if lang == "core"
+                    else "extended language must be rejected")
+            failures.append(f"--strict: a program of the {what}")
     if "ast" in expect and _norm_sexpr(report.get("ast") or "") != _norm_sexpr(expect["ast"]):
         failures.append(f"ast:\n      expected {expect['ast']}\n      got      {report.get('ast')}")
     if "term" in expect and _norm_term(report.get("term") or "") != _norm_term(expect["term"]):

@@ -32,10 +32,10 @@ jobs:
       - name: Build demo artifacts (visualizations generated from the examples)
         run: |
           mkdir -p demo
-          sipl visualize examples/power.sipl --state "X=2, Y=3" -o demo/power.html
-          sipl visualize examples/gcd.sipl --state "X=12, Y=18" -o demo/gcd.html
+          sipl visualize examples/power.sipl --state "X=5, Y=2" -o demo/power.html
+          sipl visualize examples/gcd.sipl --state "M=8, N=16" -o demo/gcd.html
           sipl visualize examples/div_by_zero.sipl --state "X=1, Y=0" -o demo/div_by_zero.html
-          sipl tree examples/power.sipl --format svg --compact -o demo/power-parse-tree.svg
+          sipl tree examples/power.sipl --format svg -o demo/power-parse-tree.svg
           sipl parse examples/power.sipl --format svg -o demo/power-ast.svg
           sipl term examples/power.sipl --tree svg -o demo/power-term.svg
           cd demo && zip -r ../sipl-demo-${GITHUB_REF_NAME}.zip . && cd ..

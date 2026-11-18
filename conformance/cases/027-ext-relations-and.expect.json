@@ -1,0 +1,15 @@
+{
+  "description": "ext relations and",
+  "category": "semantics",
+  "language": "extension",
+  "syntax": "ok",
+  "runs": [
+    {
+      "state": {},
+      "result": "defined",
+      "final_state": {
+        "R": 1
+      }
+    }
+  ]
+}

@@ -1,1 +1,1 @@
-X := 5
+begin X := 5 end

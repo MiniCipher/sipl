@@ -1,0 +1,24 @@
+{
+  "description": "precedence textbook example 1 2",
+  "category": "semantics",
+  "language": "core",
+  "syntax": "ok",
+  "ast": "(assign R (+ (var X) (* (var Y) (var Z))))",
+  "term": "AS^R(S^2(add, X=>, S^2(mult, Y=>, Z=>)))",
+  "runs": [
+    {
+      "state": {
+        "X": 1,
+        "Y": 2,
+        "Z": 3
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 1,
+        "Y": 2,
+        "Z": 3,
+        "R": 7
+      }
+    }
+  ]
+}

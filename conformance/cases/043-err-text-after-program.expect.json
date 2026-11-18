@@ -1,0 +1,9 @@
+{
+  "description": "text after program",
+  "category": "syntax-error",
+  "syntax": "error",
+  "error": {
+    "line": 1,
+    "column": 17
+  }
+}

@@ -1,6 +1,7 @@
 {
   "description": "skip",
   "category": "semantics",
+  "language": "core",
   "syntax": "ok",
   "ast": "(skip)",
   "term": "id",

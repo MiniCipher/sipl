@@ -1,0 +1,28 @@
+{
+  "description": "while zero iterations",
+  "category": "semantics",
+  "language": "core",
+  "syntax": "ok",
+  "ast": "(while (> (var X) (num 0)) (assign X (- (var X) (num 1))))",
+  "term": "WH(S^2(gr, X=>, #0), AS^X(S^2(sub, X=>, #1)))",
+  "runs": [
+    {
+      "state": {
+        "X": 0
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 0
+      }
+    },
+    {
+      "state": {
+        "X": 3
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "description": "parens",
+  "category": "semantics",
+  "language": "core",
+  "syntax": "ok",
+  "ast": "(assign X (* (+ (num 1) (num 2)) (num 3)))",
+  "term": "AS^X(S^2(mult, S^2(add, #1, #2), #3))",
+  "runs": [
+    {
+      "state": {},
+      "result": "defined",
+      "final_state": {
+        "X": 9
+      }
+    }
+  ]
+}

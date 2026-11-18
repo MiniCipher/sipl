@@ -1,0 +1,21 @@
+{
+  "description": "fibonacci",
+  "category": "semantics",
+  "language": "core",
+  "syntax": "ok",
+  "runs": [
+    {
+      "state": {
+        "N": 10
+      },
+      "result": "defined",
+      "final_state": {
+        "N": 10,
+        "A": 55,
+        "B": 89,
+        "K": 10,
+        "T": 89
+      }
+    }
+  ]
+}

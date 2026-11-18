@@ -1,6 +1,7 @@
 {
   "description": "if nested else",
   "category": "semantics",
+  "language": "core",
   "syntax": "ok",
   "runs": [
     {

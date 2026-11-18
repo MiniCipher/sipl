@@ -2,7 +2,7 @@
 begin
   S := 0;
   K := 0;
-  while K < N do
+  while N > K do
   begin
     K := K + 1;
     S := S + K

@@ -1,9 +1,0 @@
-{
-  "description": "colon alone",
-  "category": "syntax-error",
-  "syntax": "error",
-  "error": {
-    "line": 1,
-    "column": 3
-  }
-}

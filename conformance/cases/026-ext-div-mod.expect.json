@@ -1,0 +1,36 @@
+{
+  "description": "ext div mod",
+  "category": "semantics",
+  "language": "extension",
+  "syntax": "ok",
+  "ast": "(seq (assign Q (/ (var X) (var Y))) (assign R (mod (var X) (var Y))))",
+  "term": "AS^Q(S^2(div, X=>, Y=>)) o AS^R(S^2(mod, X=>, Y=>))",
+  "runs": [
+    {
+      "state": {
+        "X": 17,
+        "Y": 5
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 17,
+        "Y": 5,
+        "Q": 3,
+        "R": 2
+      }
+    },
+    {
+      "state": {
+        "X": -7,
+        "Y": 2
+      },
+      "result": "defined",
+      "final_state": {
+        "X": -7,
+        "Y": 2,
+        "Q": -4,
+        "R": 1
+      }
+    }
+  ]
+}

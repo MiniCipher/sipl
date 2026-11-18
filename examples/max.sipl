@@ -1,2 +1,4 @@
-// Максимум двох чисел
-if X >= Y then M := X else M := Y
+// Максимум двох чисел (ядро курсу: лише = та >)
+begin
+  if X > Y then M := X else M := Y
+end

@@ -1,0 +1,1 @@
+begin S := 0; I := 0; while 3 > I do begin J := 0; while 2 > J do begin S := S + 1; J := J + 1 end; I := I + 1 end end

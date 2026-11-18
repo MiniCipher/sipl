@@ -1,0 +1,29 @@
+{
+  "description": "neg binds weaker than eq",
+  "category": "semantics",
+  "language": "core",
+  "syntax": "ok",
+  "ast": "(if (or (not (= (var X) (num 1))) (> (var X) (num 5))) (assign R (num 1)) (assign R (num 0)))",
+  "runs": [
+    {
+      "state": {
+        "X": 1
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 1,
+        "R": 0
+      }
+    },
+    {
+      "state": {
+        "X": 7
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 7,
+        "R": 1
+      }
+    }
+  ]
+}

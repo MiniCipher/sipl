@@ -1,0 +1,13 @@
+{
+  "description": "undef strict or",
+  "category": "undefined",
+  "language": "core",
+  "syntax": "ok",
+  "runs": [
+    {
+      "state": {},
+      "result": "undefined",
+      "undefined_code": "UNBOUND"
+    }
+  ]
+}

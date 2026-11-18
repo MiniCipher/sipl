@@ -1,0 +1,21 @@
+{
+  "description": "ext gre practicum mkr",
+  "category": "semantics",
+  "language": "extension",
+  "syntax": "ok",
+  "term": "AS^R(#0) o WH(S^2(gre, X=>, Y=>), AS^X(S^2(sub, X=>, Y=>)) o AS^R(S^2(add, R=>, #1)))",
+  "runs": [
+    {
+      "state": {
+        "X": 7,
+        "Y": 4
+      },
+      "result": "defined",
+      "final_state": {
+        "X": 3,
+        "Y": 4,
+        "R": 1
+      }
+    }
+  ]
+}
